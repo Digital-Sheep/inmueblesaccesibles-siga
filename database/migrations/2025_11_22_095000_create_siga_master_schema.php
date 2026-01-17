@@ -100,7 +100,7 @@ return new class extends Migration
             $table->foreignId('administradora_id')->constrained('cat_administradoras');
             $table->string('archivo_path')->nullable();
             $table->date('fecha_recepcion');
-            $table->enum('estatus', ['BORRADOR', 'VALIDADA', 'PUBLICADA'])->default('BORRADOR');
+            $table->enum('estatus', ['BORRADOR', 'PROCESADA', 'PUBLICADA'])->default('BORRADOR');
 
             // Auditoría
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -237,6 +237,7 @@ return new class extends Migration
                 'VISITA_REALIZADA', // Visitó la propiedad
                 'APARTADO_GENERADO', // Se generó el contrato de apartado de 10k
                 'APARTADO_POR_VALIDAR', // Comprobante de pago cargado, esperando validación
+                'APARTADO_VALIDADO', // Apartado validado
                 'EN_DICTAMINACION', // Jurídico trabajando
                 'DICTAMINADO_R2',   // Luz verde para enganche
                 'ESPERANDO_ENGANCHE', // Esperando el 50%

@@ -9,8 +9,10 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -20,6 +22,16 @@ class InteraccionsTable
     {
         return $table
             ->columns([
+                TextColumn::make('entidad_nombre')
+                    ->label('Nombre Prospecto/Cliente')
+                    ->getStateUsing(function ($record) {
+                        // Detecta dinámicamente el nombre según el modelo
+                        return $record->entidad->nombre_completo
+                            ?? $record->entidad->nombre_completo_virtual
+                            ?? 'Sin Nombre';
+                    })
+                    ->searchable() // Esto requerirá un poco más de lógica en el query, pero para visualización funciona
+                    ->weight('bold'),
                 // Columna principal que usa el Accessor (el Resumen que creamos en el Modelo)
                 TextColumn::make('resumen_interaccion')
                     ->label('Interacción')
@@ -50,6 +62,13 @@ class InteraccionsTable
                 TextColumn::make('usuario.name')
                     ->label('Asesor')
                     ->sortable(),
+                IconColumn::make('es_venta_cruzada')
+                    ->label('Venta Cruzada')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-users') // Icono de dos personas (colaboración)
+                    ->trueColor('warning') // Color ámbar para destacar
+                    ->falseIcon('') // Ocultar si no es venta cruzada para no ensuciar
+                    ->toggleable(),
             ])
             ->filters([
                 SelectFilter::make('tipo')
@@ -63,6 +82,11 @@ class InteraccionsTable
                 SelectFilter::make('usuario_id')
                     ->relationship('usuario', 'name')
                     ->label('Por Asesor'),
+                TernaryFilter::make('es_venta_cruzada')
+                    ->label('Tipo de Registro')
+                    ->placeholder('Todos los registros')
+                    ->trueLabel('Solo Ventas Cruzadas (Bonos)')
+                    ->falseLabel('Registros Propios'),
             ])
             ->actions([
                 ViewAction::make(),

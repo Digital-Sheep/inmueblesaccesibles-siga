@@ -13,7 +13,11 @@ class ListPagos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            // CreateAction::make()
+            //     ->label('Nuevo pago')
+            //     ->modalHeading('Registrar nuevo pago')
+            //     ->modalWidth('3xl')
+            //     ->createAnother(false),
         ];
     }
 }

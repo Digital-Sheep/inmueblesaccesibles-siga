@@ -32,7 +32,7 @@ class EventoAgendaResource extends Resource
 
     protected static ?string $cluster = ComercialCluster::class;
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'titulo';
 

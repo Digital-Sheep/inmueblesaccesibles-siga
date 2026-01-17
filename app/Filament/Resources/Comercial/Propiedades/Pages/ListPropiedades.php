@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Comercial\Propiedades\Pages;
 use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ListPropiedades extends ListRecords
 {
@@ -13,7 +15,22 @@ class ListPropiedades extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('Agregar propiedad'),
         ];
+    }
+
+    protected function getTableQuery(): ?Builder
+    {
+        $query = parent::getTableQuery();
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->sucursal_id && ! $user->hasRole('Super Admin')) {
+            $query->where('sucursal_id', $user->sucursal_id);
+        }
+
+        return $query;
     }
 }

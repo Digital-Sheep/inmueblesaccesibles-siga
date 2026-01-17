@@ -4,26 +4,33 @@ namespace App\Filament\Resources\Comercial\Propiedades\Schemas;
 
 use App\Models\CatEstado;
 use App\Models\CatMunicipio;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class PropiedadForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Tabs::make('Detalles de la Propiedad')
                     ->tabs([
                         // --- PESTAÑA 1: UBICACIÓN ---
-                        Tabs\Tab::make('Ubicación')
+                        Tab::make('Ubicación')
                             ->icon('heroicon-o-map-pin')
                             ->schema([
                                 Grid::make(2)
@@ -31,7 +38,7 @@ class PropiedadForm
                                         Select::make('sucursal_id')
                                             ->relationship('sucursal', 'nombre')
                                             ->required()
-                                            ->label('Sucursal Asignada'),
+                                            ->label('Sucursal asignada'),
 
                                         TextInput::make('numero_credito')
                                             ->label('No. Crédito / ID')
@@ -40,7 +47,7 @@ class PropiedadForm
                                     ]),
 
                                 Textarea::make('direccion_completa')
-                                    ->label('Dirección Completa (Como viene en el Excel)')
+                                    ->label('Dirección completa')
                                     ->rows(2)
                                     ->columnSpanFull()
                                     ->required(),
@@ -66,8 +73,12 @@ class PropiedadForm
                                             ->numeric()
                                             ->maxLength(5),
 
-                                        TextInput::make('colonia'),
-                                        TextInput::make('calle'),
+                                        TextInput::make('calle')
+                                            ->columnSpan(3),
+
+                                        TextInput::make('colonia')
+                                            ->columnSpan(2),
+
                                         TextInput::make('numero_exterior'),
                                     ]),
 
@@ -79,7 +90,7 @@ class PropiedadForm
                             ]),
 
                         // --- PESTAÑA 2: PRECIOS Y NEGOCIO ---
-                        Tabs\Tab::make('Precios y Estatus')
+                        Tab::make('Precios y estatus')
                             ->icon('heroicon-o-banknotes')
                             ->schema([
                                 Grid::make(3)
@@ -96,27 +107,31 @@ class PropiedadForm
                                             ->required(),
 
                                         TextInput::make('precio_minimo')
-                                            ->label('Precio Mínimo (Piso)')
+                                            ->label('Precio Mínimo')
                                             ->prefix('$')
-                                            ->numeric()
-                                            ->password()
-                                            ->revealable(),
+                                            ->numeric(),
                                     ]),
 
-                                Section::make('Semáforos de Control')
+                                Section::make('Estatus de control')
                                     ->schema([
                                         Select::make('estatus_comercial')
                                             ->options([
-                                                'BORRADOR' => 'Borrador (Oculto)',
+                                                'BORRADOR' => 'Borrador',
                                                 'EN_REVISION' => 'En Revisión (Dirección)',
-                                                'DISPONIBLE' => 'Disponible (Venta)',
+                                                'DISPONIBLE' => 'Disponible',
                                                 'APARTADA' => 'Apartada',
                                                 'VENDIDA' => 'Vendida',
                                                 'BAJA' => 'Baja / Cancelada',
                                             ])
                                             ->default('BORRADOR')
-                                            ->selectablePlaceholder(false)
-                                            ->native(false),
+                                            ->native(false)
+                                            ->disabled()
+                                            ->dehydrated()
+                                            ->hidden(function (string $operation, Get $get) {
+                                                if ($operation === 'create') {
+                                                    return true;
+                                                }
+                                            }),
 
                                         Select::make('estatus_legal')
                                             ->label('Estatus Jurídico (Informativo)')
@@ -129,12 +144,13 @@ class PropiedadForm
                                                 'ESCRITURADA' => 'Escriturada',
                                             ])
                                             ->disabled()
-                                            ->dehydrated(),
+                                            ->dehydrated()
+                                            ->native(false),
                                     ])->columns(2),
                             ]),
 
                         // --- PESTAÑA 3: CARACTERÍSTICAS ---
-                        Tabs\Tab::make('Características')
+                        Tab::make('Características')
                             ->icon('heroicon-o-home')
                             ->schema([
                                 Grid::make(3)
@@ -153,8 +169,54 @@ class PropiedadForm
                                         TextInput::make('estacionamientos')->numeric(),
                                     ]),
                             ]),
+
+                        Tab::make('Galería y archivos')
+                            ->icon('heroicon-o-photo')
+                            ->schema([
+                                Repeater::make('archivos')
+                                    ->relationship()
+                                    ->label('Fotos y documentos de la propiedad')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                FileUpload::make('ruta_archivo')
+                                                    ->label('Evidencia / Foto')
+                                                    ->image()
+                                                    ->imageEditor()
+                                                    ->directory('propiedades-fotos')
+                                                    ->storeFileNamesIn('nombre_original')
+                                                    ->required()
+                                                    ->columnSpan(1),
+
+                                                Group::make()
+                                                    ->schema([
+                                                        Select::make('categoria')
+                                                            ->label('Categoría')
+                                                            ->options([
+                                                                'FACHADA' => '🏠 Fachada Principal',
+                                                                'INTERIOR' => '🛋️ Interiores',
+                                                                'PATIO' => '🌳 Patio / Jardín',
+                                                                'PLANO' => '🗺️ Plano / Croquis',
+                                                                'DAMAGE' => '⚠️ Daños / Reparaciones',
+                                                                'LEGAL' => '⚖️ Documento Legal (Público)',
+                                                            ])
+                                                            ->required()
+                                                            ->default('INTERIOR'),
+
+                                                        Hidden::make('tipo_mime')
+                                                            ->default('image/jpeg'),
+                                                    ])
+                                                    ->columnSpan(1),
+                                            ]),
+                                    ])
+                                    ->grid(1)
+                                    ->defaultItems(0)
+                                    ->addActionLabel('Subir nueva foto')
+                                    ->reorderableWithButtons()
+                                    ->collapsible(),
+                            ])
+                            ->columnSpanFull()
                     ])
-                    ->columnSpanFull()
             ]);
     }
 }

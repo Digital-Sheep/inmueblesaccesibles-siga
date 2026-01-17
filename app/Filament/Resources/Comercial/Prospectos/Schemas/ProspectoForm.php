@@ -2,10 +2,14 @@
 
 namespace App\Filament\Resources\Comercial\Prospectos\Schemas;
 
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -17,73 +21,123 @@ class ProspectoForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
-                Grid::make(3)
+                Toggle::make('modo_edicion')
+                    ->label('Habilitar edición')
+                    ->onColor('success')
+                    ->offColor('gray')
+                    ->default(false)
+                    ->live()
+                    ->dehydrated(false)
+                    ->columnSpanFull()
+                    ->visibleOn('edit')
+                    ->hidden(fn(Get $get) => $get('estatus') === 'CLIENTE'),
+
+                Group::make()
                     ->schema([
-                        // SECCIÓN 1: DATOS DE CONTACTO (Lo vital)
-                        Section::make('Información de Contacto')
+                        Grid::make(2)
                             ->schema([
                                 TextInput::make('nombre_completo')
+                                    ->label('Nombre completo')
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpanFull(),
 
                                 TextInput::make('celular')
+                                    ->label('WhatsApp / Celular')
                                     ->tel()
-                                    ->required()
-                                    ->unique(ignoreRecord: true) // ¡Anti-duplicados!
-                                    ->validationMessages([
-                                        'unique' => 'Este número ya está registrado con otro asesor.',
-                                    ]),
+                                    ->required(),
 
                                 TextInput::make('email')
-                                    ->email()
-                                    ->unique(ignoreRecord: true),
-                            ])->columnSpan(2),
+                                    ->label('Correo electrónico')
+                                    ->email(),
 
-                        // SECCIÓN 2: CLASIFICACIÓN Y GESTIÓN
-                        Section::make('Seguimiento')
-                            ->schema([
                                 Select::make('estatus')
                                     ->options([
-                                        'NUEVO' => 'Nuevo (Sin tocar)',
+                                        'NUEVO' => 'Nuevo',
                                         'CONTACTADO' => 'Ya hubo contacto',
-                                        'CITA' => 'Cita Agendada',
-                                        'APARTADO' => 'En Proceso de Apartado',
-                                        'CLIENTE' => 'Ya es Cliente (Compró)',
-                                        'DESCARTADO' => 'Descartado / No Interesado',
+                                        'CITA' => 'Cita agendada',
+                                        'APARTADO' => 'En proceso de apartado',
+                                        'CLIENTE' => 'Ya es cliente (compró)',
+                                        'DESCARTADO' => 'Descartado / No interesado',
                                     ])
                                     ->default('NUEVO')
-                                    ->live() // Para mostrar/ocultar el motivo
+                                    ->live()
                                     ->native(false),
 
-                                // Solo aparece si se descarta
+                                Select::make('origen')
+                                    ->options([
+                                        'CALL' => 'Llamó a la sucursal',
+                                        'FACEBOOK' => 'Campaña Facebook',
+                                        'WEB' => 'Sitio web',
+                                        'REFERIDO' => 'Referido',
+                                        'WALK_IN' => 'Visitó sucursal',
+                                        'OTRO' => 'Otro',
+                                    ])
+                                    ->native(false),
+
+                                Select::make('sucursal_id')
+                                    ->relationship('sucursal', 'nombre')
+                                    ->default(fn() => Auth::user()->sucursal_id)
+                                    ->required()
+                                    ->native(false),
+
+                                Select::make('usuario_responsable_id')
+                                    ->relationship('responsable', 'name')
+                                    ->label('Asesor asignado')
+                                    ->default(fn() => Auth::id())
+                                    ->required()
+                                    ->native(false),
+
                                 Textarea::make('motivo_descarte')
                                     ->label('¿Por qué se descartó?')
+                                    ->rows(2)
                                     ->placeholder('Ej. Solo tiene crédito Infonavit...')
                                     ->visible(fn(Get $get) => $get('estatus') === 'DESCARTADO')
                                     ->required(fn(Get $get) => $get('estatus') === 'DESCARTADO')
                                     ->columnSpanFull(),
+                            ]),
+                    ])
+                    ->columnSpanFull()
+                    ->disabled(function (string $operation, Get $get) {
+                        if ($operation === 'create') {
+                            return false;
+                        }
 
-                                Select::make('origen')
-                                    ->options([
-                                        'FACEBOOK' => 'Campaña Facebook',
-                                        'WEB' => 'Sitio Web',
-                                        'REFERIDO' => 'Referido',
-                                        'WALK_IN' => 'Visitó Sucursal',
-                                    ]),
+                        return ! $get('modo_edicion');
+                    }),
 
-                                Select::make('sucursal_id')
-                                    ->relationship('sucursal', 'nombre')
-                                    ->required(),
-
-                                Select::make('usuario_responsable_id')
-                                    ->relationship('responsable', 'name')
-                                    ->label('Asesor Asignado')
-                                    ->default(fn() => Auth::id()) // Se auto-asigna al crear
-                                    ->required(),
-                            ])->columnSpan(1),
-                    ]),
+                Section::make('Historial de Interacciones')
+                    ->collapsed()
+                    ->description('Agrega notas rápidas o llamadas')
+                    ->schema([
+                        Repeater::make('interacciones')
+                            ->relationship()
+                            ->label('Interacciones')
+                            ->addActionLabel('Agregar Nueva Nota/Llamada')
+                            ->reorderable(false)
+                            ->collapsible()
+                            ->cloneable(false)
+                            ->grid(1)
+                            ->itemLabel(fn(array $state): ?string => $state['titulo'] ?? null)
+                            ->schema([
+                                Grid::make(2)->schema([
+                                    Select::make('tipo_interaccion')
+                                        ->options(['llamada' => 'Llamada', 'whatsapp' => 'WhatsApp', 'nota' => 'Nota'])
+                                        ->required(),
+                                    DateTimePicker::make('fecha_programada')
+                                        ->required(),
+                                ]),
+                                TextInput::make('titulo')->required()->columnSpanFull(),
+                                Textarea::make('observaciones')->rows(2)->columnSpanFull(),
+                            ]),
+                    ])
+                    ->hidden(function (string $operation, Get $get) {
+                        if ($operation === 'create') {
+                            return true;
+                        }
+                    }),
             ]);
     }
 }

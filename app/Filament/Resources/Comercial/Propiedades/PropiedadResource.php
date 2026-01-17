@@ -66,9 +66,6 @@ class PropiedadResource extends Resource
     {
         return [
             'index' => ListPropiedades::route('/'),
-            'create' => CreatePropiedad::route('/create'),
-            'view' => ViewPropiedad::route('/{record}'),
-            'edit' => EditPropiedad::route('/{record}/edit'),
         ];
     }
 

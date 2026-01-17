@@ -3,15 +3,14 @@
 namespace App\Filament\Resources\Comercial\Propiedades\Tables;
 
 use App\Models\Propiedad;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 
@@ -21,17 +20,17 @@ class PropiedadesTable
     {
         return $table
             ->columns([
-                // 1. Identificación Principal (Crédito + Dirección)
+                // 1. Identificación Principal
                 TextColumn::make('numero_credito')
                     ->label('Propiedad')
                     ->description(fn(Propiedad $record) => Str::limit($record->direccion_completa, 50))
                     ->searchable(['numero_credito', 'direccion_completa'])
                     ->sortable()
                     ->weight('bold')
-                    ->copyable() // Permite copiar el ID con un clic
+                    ->copyable()
                     ->copyMessage('ID copiado'),
 
-                // 2. Precio (Formato Moneda)
+                // 2. Precio
                 TextColumn::make('precio_venta_sugerido')
                     ->label('Precio')
                     ->money('MXN')
@@ -43,7 +42,7 @@ class PropiedadesTable
                     ->sortable()
                     ->searchable(),
 
-                // 4. Semáforo Comercial (Para el Asesor)
+                // 4. Semáforo comercial
                 TextColumn::make('estatus_comercial')
                     ->badge()
                     ->label('Estatus Venta')
@@ -56,7 +55,7 @@ class PropiedadesTable
                         default => 'gray',
                     }),
 
-                // 5. Semáforo Legal (Para Jurídico)
+                // 5. Semáforo legal
                 TextColumn::make('estatus_legal')
                     ->badge()
                     ->label('Jurídico')
@@ -74,30 +73,66 @@ class PropiedadesTable
                     }),
             ])
             ->filters([
-                // Filtro Rápido: ¿Qué puedo vender?
                 SelectFilter::make('estatus_comercial')
                     ->options([
-                        'DISPONIBLE' => '✅ Disponibles',
-                        'APARTADA' => '⏳ Apartadas',
-                        'VENDIDA' => '🔒 Vendidas',
+                        'BORRADOR' => 'Borradores',
+                        'DISPONIBLE' => 'Disponibles',
+                        'APARTADA' => 'Apartadas',
+                        'VENDIDA' => 'Vendidas',
                     ])
-                    ->label('Estatus Venta'),
+                    ->label('Filtrar por estatus')
+                    ->native(false),
 
-                // Filtro por Sucursal
                 SelectFilter::make('sucursal_id')
                     ->relationship('sucursal', 'nombre')
-                    ->label('Sucursal'),
+                    ->label('Sucursal')
+                    ->native(false),
             ])
-            ->actions([
-                ViewAction::make(),
-                EditAction::make(),
+            ->recordAction(EditAction::class)
+            ->recordActions([
+                EditAction::make()
+                    ->modalHeading('Datos de la propiedad')
+                    ->modalWidth('4xl')
+                    ->slideOver()
+                    ->button()
+                    ->label('Detalles'),
+
+                Action::make('validar_publicacion')
+                    ->label('Validar y Publicar')
+                    ->icon('heroicon-o-check-badge')
+                    ->button()
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('¿Publicar propiedad?')
+                    ->modalDescription('Al validar, esta propiedad pasará a DISPONIBLE y será visible para todos los asesores.')
+                    ->visible(fn(Propiedad $record) => in_array($record->estatus_comercial, ['BORRADOR', 'EN_REVISION']))
+
+                    ->action(function (Propiedad $record) {
+                        if ($record->precio_venta_sugerido <= 0) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Datos Incompletos')
+                                ->body('No puedes publicar una propiedad sin precio de venta. Edítala primero.')
+                                ->send();
+                            return;
+                        }
+
+                        $record->update([
+                            'estatus_comercial' => 'DISPONIBLE',
+                        ]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Propiedad Publicada')
+                            ->body("La propiedad {$record->numero_credito} ya está disponible para venta.")
+                            ->send();
+                    }),
             ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ])
-            // Orden por defecto: Las más nuevas primero
+            // ->toolbarActions([
+            //     BulkActionGroup::make([
+            //         DeleteBulkAction::make(),
+            //     ]),
+            // ])
             ->defaultSort('created_at', 'desc');
     }
 }

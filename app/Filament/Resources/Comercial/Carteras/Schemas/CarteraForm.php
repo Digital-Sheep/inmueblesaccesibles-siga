@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\Comercial\Carteras\Schemas;
 
+use App\Models\CatSucursal;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class CarteraForm
@@ -15,48 +15,60 @@ class CarteraForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
-                Section::make('Detalles de la Carga de Cartera')
-                    ->description('Registre los datos del archivo maestro proporcionado por la Administradora.')
-                    ->icon('heroicon-o-document-arrow-up')
+                Grid::make(2)
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('nombre')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->label('Nombre del Lote/Cartera'),
+                        TextInput::make('nombre')
+                            ->required()
+                            ->maxLength(255)
+                            ->label('Nombre de la cartera'),
 
-                                Select::make('administradora_id')
-                                    ->relationship('administradora', 'nombre')
-                                    ->required()
-                                    ->label('Institución Administradora'),
-                            ]),
+                        Select::make('administradora_id')
+                            ->relationship('administradora', 'nombre')
+                            ->required()
+                            ->label('Institución administradora')
+                            ->native(false),
+
+                        Select::make('sucursal_id')
+                            ->label('Sucursal asignada')
+                            ->options(CatSucursal::where('activo', true)->pluck('nombre', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->native(false),
 
                         DatePicker::make('fecha_recepcion')
                             ->required()
-                            ->label('Fecha de Corte/Recepción')
-                            ->default(now()),
-
-                        // Campo para subir el archivo de Excel/CSV
-                        FileUpload::make('archivo_path')
-                            ->label('Archivo de Cartera (Excel/CSV)')
-                            ->disk('local') // Guarda en el storage/app/
-                            ->directory('carteras-raw') // Carpeta específica
-                            ->required()
-                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv']),
-
-                        // El estatus solo se actualiza al validar o procesar, no por el formulario
-                        Select::make('estatus')
-                            ->options([
-                                'BORRADOR' => 'Borrador (Pendiente de Procesar)',
-                                'VALIDADA' => 'Validada (Lista para publicar)',
-                                'PUBLICADA' => 'Publicada (Inventario Visible)',
-                            ])
-                            ->default('BORRADOR')
-                            ->disabledOn('edit') // Evita que se cambie el estado a mano
-                            ->dehydrated(),
+                            ->label('Fecha de recepción')
+                            ->default(now())
+                            ->native(false),
                     ]),
+
+                FileUpload::make('archivo_path')
+                    ->label('Archivo CSV (Delimitado por comas)')
+                    ->disk('local')
+                    ->directory('carteras-raw')
+                    ->required()
+                    ->acceptedFileTypes(['text/csv', 'text/plain', 'application/vnd.ms-excel']) // Tipos MIME de CSV
+                    ->helperText('Importante: Guarda tu Excel como "CSV (delimitado por comas)" antes de subirlo.')
+                    ->hidden(function (string $operation) {
+                        return $operation === 'edit';
+                    }),
+
+
+                    Select::make('estatus')
+                    ->options([
+                        'BORRADOR' => 'Borrador (Pendiente de Procesar)',
+                        'PROCESADA' => 'Procesada (Lista para validar)',
+                        'PUBLICADA' => 'Publicada (Inventario Visible)',
+                    ])
+                    ->default('BORRADOR')
+                    ->disabledOn('edit')
+                    ->dehydrated()
+                    ->hidden(function (string $operation) {
+                        return $operation === 'create';
+                    }),
+
             ]);
     }
 }

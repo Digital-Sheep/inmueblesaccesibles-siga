@@ -3,10 +3,7 @@
 namespace App\Filament\Resources\Comercial\Clientes;
 
 use App\Filament\Clusters\Comercial\ComercialCluster;
-use App\Filament\Resources\Comercial\Clientes\Pages\CreateCliente;
-use App\Filament\Resources\Comercial\Clientes\Pages\EditCliente;
 use App\Filament\Resources\Comercial\Clientes\Pages\ListClientes;
-use App\Filament\Resources\Comercial\Clientes\Pages\ViewCliente;
 use App\Filament\Resources\Comercial\Clientes\Schemas\ClienteForm;
 use App\Filament\Resources\Comercial\Clientes\Schemas\ClienteInfolist;
 use App\Filament\Resources\Comercial\Clientes\Tables\ClientesTable;
@@ -32,7 +29,7 @@ class ClienteResource extends Resource
 
     protected static ?string $cluster = ComercialCluster::class;
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'nombre_completo_virtual';
 
@@ -62,9 +59,6 @@ class ClienteResource extends Resource
     {
         return [
             'index' => ListClientes::route('/'),
-            'create' => CreateCliente::route('/create'),
-            'view' => ViewCliente::route('/{record}'),
-            'edit' => EditCliente::route('/{record}/edit'),
         ];
     }
 

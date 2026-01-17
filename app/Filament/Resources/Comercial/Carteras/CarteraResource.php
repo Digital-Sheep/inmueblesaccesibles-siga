@@ -62,9 +62,6 @@ class CarteraResource extends Resource
     {
         return [
             'index' => ListCarteras::route('/'),
-            'create' => CreateCartera::route('/create'),
-            'view' => ViewCartera::route('/{record}'),
-            'edit' => EditCartera::route('/{record}/edit'),
         ];
     }
 

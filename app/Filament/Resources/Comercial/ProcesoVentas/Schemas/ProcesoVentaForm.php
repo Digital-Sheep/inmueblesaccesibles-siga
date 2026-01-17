@@ -9,9 +9,7 @@ use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Placeholder;
-
+use Filament\Infolists\Components\TextEntry;
 use Illuminate\Support\Facades\Auth;
 
 class ProcesoVentaForm
@@ -19,76 +17,73 @@ class ProcesoVentaForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
-                Grid::make(3)
-                    ->schema([
-                        // COLUMNA IZQUIERDA: QUIÉN Y QUÉ
-                        Section::make('Datos de la Venta')
-                            ->icon('heroicon-o-shopping-bag')
-                            ->schema([
-                                // Selector Polimórfico: Permite buscar en Prospectos Y Clientes
-                                MorphToSelect::make('interesado')
-                                    ->label('¿Quién compra?')
-                                    ->types([
-                                        Type::make(\App\Models\Prospecto::class)
-                                            ->titleAttribute('nombre_completo')
-                                            ->label('Prospecto'),
-                                        MorphToSelect\Type::make(\App\Models\Cliente::class)
-                                            ->titleAttribute('nombres') // O el virtual si funciona en búsqueda
-                                            ->getOptionLabelFromRecordUsing(fn($record) => "{$record->nombres} {$record->apellido_paterno}")
-                                            ->label('Cliente Existente'),
-                                    ])
-                                    ->searchable()
-                                    ->preload()
-                                    ->required(),
+                MorphToSelect::make('interesado')
+                    ->label('¿Quién compra?')
+                    ->types([
+                        Type::make(\App\Models\Prospecto::class)
+                            ->titleAttribute('nombre_completo')
+                            ->label('Prospecto'),
+                        MorphToSelect\Type::make(\App\Models\Cliente::class)
+                            ->titleAttribute('nombres') // O el virtual si funciona en búsqueda
+                            ->getOptionLabelFromRecordUsing(fn($record) => "{$record->nombres} {$record->apellido_paterno}")
+                            ->label('Cliente Existente'),
+                    ])
+                    ->searchable()
+                    ->preload()
+                    ->required(),
 
-                                Select::make('propiedad_id')
-                                    ->label('Propiedad')
-                                    ->relationship(
-                                        'propiedad',
-                                        'numero_credito',
-                                        fn($query) =>
-                                        $query->whereIn('estatus_comercial', ['DISPONIBLE', 'EN_REVISION'])
-                                    )
-                                    ->getOptionLabelFromRecordUsing(fn(Propiedad $record) => $record->nombre_corto)
-                                    ->searchable()
-                                    ->preload()
-                                    ->required()
-                                    ->live(), // Si cambia, podríamos mostrar el precio abajo
-                            ])->columnSpan(2),
+                Select::make('propiedad_id')
+                    ->label('Propiedad')
+                    ->relationship(
+                        'propiedad',
+                        'numero_credito',
+                        fn($query) =>
+                        $query->whereIn('estatus_comercial', ['DISPONIBLE', 'EN_REVISION'])
+                    )
+                    ->getOptionLabelFromRecordUsing(fn(Propiedad $record) => $record->nombre_corto)
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->live(),
 
-                        // COLUMNA DERECHA: ESTATUS Y VENDEDOR
-                        Section::make('Control Interno')
-                            ->schema([
-                                Select::make('vendedor_id')
-                                    ->relationship('vendedor', 'name')
-                                    ->default(fn() => Auth::id())
-                                    ->required(),
+                Select::make('vendedor_id')
+                    ->relationship('vendedor', 'name')
+                    ->default(fn() => Auth::id())
+                    ->required()
+                    ->disabled(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
 
-                                Select::make('estatus')
-                                    ->options([
-                                        'ACTIVO' => 'En Negociación',
-                                        'VISITA_REALIZADA' => 'Visita Realizada',
-                                        'SOLICITUD_APARTADO' => 'Solicitando Apartado',
-                                        'APARTADO' => 'Apartado Confirmado',
-                                        'CANCELADO' => 'Cancelado',
-                                    ])
-                                    ->default('ACTIVO')
-                                    // El estatus idealmente se mueve por botones de acción (Flujo),
-                                    // pero lo dejamos editable para admins.
-                                    ->disabled(function () {
-                                        /** @var \App\Models\User $user */
-                                        $user = Auth::user();
+                        return ! $user->hasRole(['Super_Admin', 'Gerente_Sucursal']);
+                    }),
 
-                                        return ! $user->hasRole(['Super_Admin', 'Gerente_Sucursal']);
-                                    })
-                                    ->dehydrated(),
+                Select::make('estatus')
+                    ->options([
+                        'ACTIVO' => 'En Negociación',
+                        'VISITA_REALIZADA' => 'Visita Realizada',
+                        'SOLICITUD_APARTADO' => 'Solicitando Apartado',
+                        'APARTADO' => 'Apartado Confirmado',
+                        'CANCELADO' => 'Cancelado',
+                    ])
+                    ->default('ACTIVO')
+                    ->disabled(function (string $operation) {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
 
-                                Placeholder::make('creado')
-                                    ->label('Fecha de Inicio')
-                                    ->content(fn($record) => $record?->created_at?->format('d/m/Y') ?? now()->format('d/m/Y')),
-                            ])->columnSpan(1),
-                    ]),
+                        return ! $user->hasRole(['Super_Admin', 'Gerente_Sucursal']) || $operation === 'create';
+                    })
+                    ->hidden(function (string $operation) {
+                        return $operation === 'create';
+                    })
+                    ->dehydrated(),
+
+                TextEntry::make('created_at')
+                    ->label('Fecha de Inicio')
+                    ->date('M j, Y')
+                    ->placeholder('Sin definir')
+                    ->hidden(fn (string $operation) => $operation === 'create'),
             ]);
     }
 }

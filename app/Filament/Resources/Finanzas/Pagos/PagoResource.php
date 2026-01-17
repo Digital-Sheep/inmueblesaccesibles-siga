@@ -3,10 +3,7 @@
 namespace App\Filament\Resources\Finanzas\Pagos;
 
 use App\Filament\Clusters\Finanzas\FinanzasCluster;
-use App\Filament\Resources\Finanzas\Pagos\Pages\CreatePago;
-use App\Filament\Resources\Finanzas\Pagos\Pages\EditPago;
 use App\Filament\Resources\Finanzas\Pagos\Pages\ListPagos;
-use App\Filament\Resources\Finanzas\Pagos\Pages\ViewPago;
 use App\Filament\Resources\Finanzas\Pagos\Schemas\PagoForm;
 use App\Filament\Resources\Finanzas\Pagos\Schemas\PagoInfolist;
 use App\Filament\Resources\Finanzas\Pagos\Tables\PagosTable;
@@ -60,9 +57,6 @@ class PagoResource extends Resource
     {
         return [
             'index' => ListPagos::route('/'),
-            'create' => CreatePago::route('/create'),
-            'view' => ViewPago::route('/{record}'),
-            'edit' => EditPago::route('/{record}/edit'),
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -13,6 +14,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -20,7 +22,9 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -32,14 +36,20 @@ class AdminPanelProvider extends PanelProvider
             ->path('/')
             ->login()
             ->colors([
-                'primary' => '#19304a',
-                'danger' => Color::Red,
-                'success' => Color::Green,
+                'primary' => Color::Indigo,
+                'gray' => Color::Slate,
+                'success' => Color::Emerald,
+                'danger'  => Color::Red,
                 'warning' => Color::Amber,
             ])
+            ->font('Poppins')
+            ->darkMode(false)
+            ->defaultThemeMode(ThemeMode::Light)
             ->brandName('SIGA - Inmuebles Accesibles')
+            ->brandLogo(asset('images/logo-dark.png'))
+            ->brandLogoHeight('4rem')
             ->favicon(asset('images/favicon.ico'))
-            ->sidebarCollapsibleOnDesktop()
+            ->sidebarCollapsibleOnDesktop(true)
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->navigationGroups([
@@ -61,8 +71,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -77,7 +85,28 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
+
+                FilamentFullCalendarPlugin::make()
+                    ->selectable()
+                    ->editable()
+                    ->timezone('America/Mexico_City')
+                    ->locale('es'),
             ])
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn(): string => Blade::render('<style>
+                    /* Forzar margen superior en la barra del calendario */
+                    .fc .fc-toolbar.fc-header-toolbar {
+                        margin-top: 2rem !important; /* Espacio extra arriba */
+                        margin-bottom: 1.5rem !important; /* Espacio abajo */
+                    }
+
+                    /* Separar todo el contenedor del calendario del título del Widget */
+                    .fi-wi-content {
+                        padding-top: 1rem !important;
+                    }
+                </style>')
+            )
             ->authMiddleware([
                 Authenticate::class,
             ]);

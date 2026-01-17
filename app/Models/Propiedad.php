@@ -52,6 +52,7 @@ class Propiedad extends Model
 
         // Datos Legales Reportados (Informativos)
         'etapa_judicial_reportada',
+        'fecha_corte_judicial',
         'avaluo_banco',
         'cofinavit_monto',
 
@@ -131,6 +132,11 @@ class Propiedad extends Model
     {
         return $this->morphMany(Archivo::class, 'entidad')
             ->where('categoria', 'GALERIA');
+    }
+
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad');
     }
 
     // --- AUDITORÍA ---

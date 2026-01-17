@@ -30,6 +30,11 @@ class DictamenResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'numero_credito';
 
+    public static function getPluralModelLabel(): string
+    {
+        return 'Dictámenes';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return DictamenForm::configure($schema);
@@ -56,9 +61,6 @@ class DictamenResource extends Resource
     {
         return [
             'index' => ListDictamens::route('/'),
-            'create' => CreateDictamen::route('/create'),
-            'view' => ViewDictamen::route('/{record}'),
-            'edit' => EditDictamen::route('/{record}/edit'),
         ];
     }
 

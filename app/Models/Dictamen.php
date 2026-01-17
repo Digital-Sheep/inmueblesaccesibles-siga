@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Dictamen extends Model
@@ -38,6 +39,8 @@ class Dictamen extends Model
         'resultado_final',
         'nomenclatura_generada',
 
+        'unidad_responsable',
+
         'created_by',
         'updated_by',
     ];
@@ -47,6 +50,11 @@ class Dictamen extends Model
         'tiene_posesion' => 'boolean',
         'fecha_ultimo_pago_deudor' => 'date',
     ];
+
+    public function getDiasTranscurridosAttribute(): int
+    {
+        return $this->created_at->diffInDays(now());
+    }
 
     // --- RELACIONES ---
 
@@ -68,6 +76,11 @@ class Dictamen extends Model
     public function solicitante(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_solicitante_id');
+    }
+
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad');
     }
 
     /**

@@ -8,5 +8,7 @@ use Filament\Support\Icons\Heroicon;
 
 class FinanzasCluster extends Cluster
 {
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+
+    protected static ?int $navigationSort = 3;
 }

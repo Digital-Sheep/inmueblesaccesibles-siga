@@ -9,7 +9,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-
+use Filament\Support\RawJs;
 use Illuminate\Support\Facades\Auth;
 
 class PagoForm
@@ -27,22 +27,24 @@ class PagoForm
                                     ->options([
                                         'APARTADO' => 'Apartado ($10,000)',
                                         'ENGANCHE' => 'Enganche (50%)',
-                                        'LIQUIDACION' => 'Liquidación Final',
-                                        'ABONO' => 'Abono a Capital',
+                                        'LIQUIDACION' => 'Liquidación final',
+                                        'ABONO' => 'Abono a capital',
                                     ])
                                     ->required(),
 
                                 TextInput::make('monto')
-                                    ->label('Monto Recibido')
+                                    ->label('Monto recibido')
                                     ->prefix('$')
                                     ->numeric()
+                                    ->mask(RawJs::make('$money($input)'))
+                                    ->stripCharacters(',')
                                     ->required(),
                             ]),
 
                         Grid::make(2)
                             ->schema([
                                 Select::make('metodo_pago')
-                                    ->label('Método de Pago')
+                                    ->label('Método de pago')
                                     ->options([
                                         'TRANSFERENCIA' => 'Transferencia SPEI',
                                         'EFECTIVO' => 'Efectivo (Caja)',
@@ -51,28 +53,28 @@ class PagoForm
                                     ->required(),
 
                                 DatePicker::make('created_at')
-                                    ->label('Fecha de Pago')
+                                    ->label('Fecha de pago')
                                     ->default(now())
                                     ->required(),
                             ]),
 
                         FileUpload::make('comprobante_url')
                             ->label('Comprobante / Voucher')
-                            ->image() // Permite ver vista previa si es imagen
+                            ->image()
                             ->disk('public')
                             ->directory('comprobantes')
                             ->required()
                             ->columnSpanFull()
-                            ->openable(), // Permite abrirlo en otra pestaña
+                            ->openable(),
                     ])->columnSpan(2),
 
-                Section::make('Validación Financiera (GAD)')
+                Section::make('Validación financiera')
                     ->schema([
                         Select::make('estatus')
                             ->options([
-                                'PENDIENTE' => '🟡 Pendiente',
-                                'VALIDADO' => '🟢 Validado (Fondos en Cuenta)',
-                                'RECHAZADO' => '🔴 Rechazado',
+                                'PENDIENTE' => 'Pendiente',
+                                'VALIDADO' => 'Validado (Fondos en cuenta)',
+                                'RECHAZADO' => 'Rechazado',
                             ])
                             ->default('PENDIENTE')
                             ->disabled(function () {
@@ -81,14 +83,15 @@ class PagoForm
 
                                 return ! $user->hasRole(['Super_Admin', 'Administracion']);
                             })
-                            ->dehydrated(), // Guarda el valor aunque esté disabled
+                            ->dehydrated(),
+
                         Select::make('validado_por_id')
                             ->relationship('validadoPor', 'name')
                             ->label('Validado por')
                             ->disabled(),
 
                         DatePicker::make('fecha_validacion')
-                            ->label('Fecha Validación')
+                            ->label('Fecha de validación')
                             ->disabled(),
                     ])->columnSpan(1),
             ])->columns(3);

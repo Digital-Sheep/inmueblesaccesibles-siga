@@ -6,12 +6,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 class ProspectosTable
@@ -19,10 +15,11 @@ class ProspectosTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('nombre_completo')
-                    ->searchable()
                     ->weight('bold')
+                    ->searchable()
                     ->sortable(),
 
                 TextColumn::make('celular')
@@ -31,7 +28,7 @@ class ProspectosTable
 
                 TextColumn::make('estatus')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'NUEVO' => 'info',        // Azul
                         'CONTACTADO' => 'warning', // Amarillo
                         'CITA' => 'primary',       // Indigo
@@ -58,20 +55,34 @@ class ProspectosTable
                 SelectFilter::make('estatus')
                     ->options([
                         'NUEVO' => 'Nuevos',
-                        'CITA' => 'Con Cita',
+                        'CITA' => 'Con cita',
                         'DESCARTADO' => 'Descartados',
-                    ]),
+                    ])
+                    ->native(false),
 
                 SelectFilter::make('usuario_responsable_id')
                     ->relationship('responsable', 'name')
-                    ->label('Por Asesor'),
+                    ->label('Por asesor')
+                    ->native(false),
+
+                SelectFilter::make('sucursal_id')
+                    ->relationship('sucursal', 'nombre')
+                    ->label('Por sucursal')
+                    ->native(false),
             ])
-            ->actions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+            ->recordAction(EditAction::class)
+            ->recordActions([
+                EditAction::make()
+                    ->label('Detalles')
+                    ->modalHeading('Datos del prospecto')
+                    ->modalWidth('2xl')
+                    ->slideOver()
+                    ->button(),
+                DeleteAction::make()
+                    ->button()
+                    ->hidden(fn ($record) => $record->estatus === 'CLIENTE'),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

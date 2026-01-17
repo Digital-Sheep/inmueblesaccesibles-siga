@@ -8,6 +8,7 @@ use App\Filament\Resources\Comercial\Prospectos\Pages\CreateProspecto;
 use App\Filament\Resources\Comercial\Prospectos\Pages\EditProspecto;
 use App\Filament\Resources\Comercial\Prospectos\Pages\ListProspectos;
 use App\Filament\Resources\Comercial\Prospectos\Pages\ViewProspecto;
+use App\Filament\Resources\Comercial\Prospectos\RelationManagers\ProcesosVentaRelationManager;
 use App\Filament\Resources\Comercial\Prospectos\Schemas\ProspectoForm;
 use App\Filament\Resources\Comercial\Prospectos\Schemas\ProspectoInfolist;
 use App\Filament\Resources\Comercial\Prospectos\Tables\ProspectosTable;
@@ -55,6 +56,7 @@ class ProspectoResource extends Resource
     public static function getRelations(): array
     {
         return [
+            ProcesosVentaRelationManager::class,
             InteraccionesRelationManager::class,
         ];
     }
@@ -63,9 +65,6 @@ class ProspectoResource extends Resource
     {
         return [
             'index' => ListProspectos::route('/'),
-            'create' => CreateProspecto::route('/create'),
-            'view' => ViewProspecto::route('/{record}'),
-            'edit' => EditProspecto::route('/{record}/edit'),
         ];
     }
 

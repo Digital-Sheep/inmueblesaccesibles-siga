@@ -16,9 +16,10 @@ class Cartera extends Model
     protected $fillable = [
         'nombre',
         'administradora_id',
+        'sucursal_id',
         'archivo_path', // Ruta del Excel original
         'fecha_recepcion',
-        'estatus', // BORRADOR, VALIDADA, PUBLICADA
+        'estatus', // BORRADOR, PROCESADA, PUBLICADA
         'created_by',
         'updated_by',
     ];
@@ -35,6 +36,15 @@ class Cartera extends Model
     public function administradora(): BelongsTo
     {
         return $this->belongsTo(CatAdministradora::class, 'administradora_id');
+    }
+
+    /**
+     * Relación con la Sucursal
+     * Esto permite hacer: $cartera->sucursal->nombre
+     */
+    public function sucursal(): BelongsTo
+    {
+        return $this->belongsTo(CatSucursal::class, 'sucursal_id');
     }
 
     /**

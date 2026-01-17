@@ -19,7 +19,6 @@ class ClientesTable
     {
         return $table
             ->columns([
-                // Usamos la columna virtual generada en MySQL
                 TextColumn::make('nombre_completo_virtual')
                     ->label('Cliente')
                     ->searchable(['nombres', 'apellido_paterno', 'apellido_materno'])
@@ -35,10 +34,9 @@ class ClientesTable
                     ->copyable()
                     ->toggleable(),
 
-                // Aquí mostraremos cuántas compras tiene activas (Relación)
                 TextColumn::make('procesos_venta_count')
                     ->counts('procesosVenta')
-                    ->label('Procesos Activos')
+                    ->label('Procesos activos')
                     ->badge()
                     ->color('primary')
                     ->sortable(),
@@ -60,15 +58,20 @@ class ClientesTable
                     ->relationship('responsable', 'name')
                     ->label('Por Ejecutivo'),
             ])
-            ->actions([
-                ViewAction::make(),
-                EditAction::make(),
+            ->recordAction(EditAction::class)
+            ->recordActions([
+                EditAction::make()
+                    ->label('Detalles')
+                    ->modalHeading('Datos del cliente')
+                    ->modalWidth('4xl')
+                    ->slideOver()
+                    ->button(),
             ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ])
+            // ->toolbarActions([
+            //     BulkActionGroup::make([
+            //         DeleteBulkAction::make(),
+            //     ]),
+            // ])
             ->defaultSort('created_at', 'desc');
     }
 }

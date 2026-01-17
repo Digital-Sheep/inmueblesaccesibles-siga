@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -76,6 +77,11 @@ class ProcesoVenta extends Model
     public function solicitudesContrato(): HasMany
     {
         return $this->hasMany(SolicitudContrato::class, 'proceso_venta_id');
+    }
+
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad');
     }
 
     // --- AUDITORÍA ---

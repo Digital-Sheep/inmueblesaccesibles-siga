@@ -62,9 +62,6 @@ class ProcesoVentaResource extends Resource
     {
         return [
             'index' => ListProcesoVentas::route('/'),
-            'create' => CreateProcesoVenta::route('/create'),
-            'view' => ViewProcesoVenta::route('/{record}'),
-            'edit' => EditProcesoVenta::route('/{record}/edit'),
         ];
     }
 
