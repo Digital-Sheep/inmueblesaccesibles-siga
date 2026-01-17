@@ -13,7 +13,11 @@ class ListInteraccions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('Nueva interacción')
+                ->modalHeading('Nueva interacción')
+                ->modalWidth('xl')
+                ->createAnother(false),
         ];
     }
 }

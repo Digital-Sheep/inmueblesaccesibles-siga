@@ -3,10 +3,7 @@
 namespace App\Filament\Resources\Comercial\Interaccions;
 
 use App\Filament\Clusters\Comercial\ComercialCluster;
-use App\Filament\Resources\Comercial\Interaccions\Pages\CreateInteraccion;
-use App\Filament\Resources\Comercial\Interaccions\Pages\EditInteraccion;
 use App\Filament\Resources\Comercial\Interaccions\Pages\ListInteraccions;
-use App\Filament\Resources\Comercial\Interaccions\Pages\ViewInteraccion;
 use App\Filament\Resources\Comercial\Interaccions\Schemas\InteraccionForm;
 use App\Filament\Resources\Comercial\Interaccions\Schemas\InteraccionInfolist;
 use App\Filament\Resources\Comercial\Interaccions\Tables\InteraccionsTable;
@@ -18,7 +15,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use UnitEnum;
 
 class InteraccionResource extends Resource
 {
@@ -30,8 +26,8 @@ class InteraccionResource extends Resource
     protected static ?string $pluralModelLabel = 'Bitácora de Seguimiento';
     protected static ?string $navigationLabel = 'Seguimiento (Bitácora)';
 
+    protected static ?string $cluster = ComercialCluster::class;
 
-protected static ?string $cluster = ComercialCluster::class;
     protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'tipo';
@@ -62,9 +58,6 @@ protected static ?string $cluster = ComercialCluster::class;
     {
         return [
             'index' => ListInteraccions::route('/'),
-            'create' => CreateInteraccion::route('/create'),
-            'view' => ViewInteraccion::route('/{record}'),
-            'edit' => EditInteraccion::route('/{record}/edit'),
         ];
     }
 

@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\Comercial\Interaccions\Schemas;
 
+use App\Models\Cliente;
 use App\Models\Prospecto;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\MorphToSelect;
+use Filament\Forms\Components\MorphToSelect\Type;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
@@ -16,24 +19,34 @@ class InteraccionForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Detalles de la Interacción')
                     ->schema([
-                        // 1. Lógica Polimórfica: Definimos el Tipo de Entidad (Por defecto Prospecto)
-                        Hidden::make('entidad_type')
-                            ->default(Prospecto::class),
+                        MorphToSelect::make('entidad')
+                            ->label('Relacionado con')
+                            ->types([
+                                Type::make(Prospecto::class)
+                                    ->label('Prospecto')
+                                    ->titleAttribute('nombre_completo'),
 
-                        // 2. Selector de Prospecto (Pre-llenado desde URL)
-                        Select::make('entidad_id')
-                            ->label('Prospecto')
-                            ->options(Prospecto::limit(50)->pluck('nombre_completo', 'id')) // Optimización básica
+                                Type::make(Cliente::class)
+                                    ->label('Cliente')
+                                    ->titleAttribute('nombre_completo_virtual'),
+                            ])
                             ->searchable()
-                            ->getSearchResultsUsing(fn(string $search) => Prospecto::where('nombre_completo', 'like', "%{$search}%")->limit(50)->pluck('nombre_completo', 'id'))
-                            ->getOptionLabelUsing(fn($value): ?string => Prospecto::find($value)?->nombre_completo)
-                            ->default(request()->query('prospecto_id')) // <--- TOMA EL ID DE LA URL
-                            ->disabled(fn() => request()->has('prospecto_id')) // Bloquea si viene pre-llenado
-                            ->dehydrated() // Envía el dato aunque esté deshabilitado
-                            ->required(),
+                            ->preload()
+                            ->required()
+                            ->default(function () {
+                                if (request()->has('prospecto_id')) {
+                                    return Prospecto::find(request('prospecto_id'));
+                                }
+                                if (request()->has('cliente_id')) {
+                                    return Cliente::find(request('cliente_id'));
+                                }
+                                return null;
+                            })
+                            ->columnSpanFull(),
 
                         // 3. Tipo de Interacción
                         Select::make('tipo')
@@ -52,7 +65,7 @@ class InteraccionForm
                         Select::make('resultado')
                             ->options([
                                 'CONTACTADO' => '✅ Contactado',
-                                'BUZON' => 'voicemail Buzón',
+                                'BUZON' => '📭 Buzón',
                                 'CITA_AGENDADA' => '📅 Cita Agendada',
                                 'NO_INTERESA' => '❌ No Interesa',
                                 'SIN_RESPUESTA' => '🔕 Sin Respuesta',

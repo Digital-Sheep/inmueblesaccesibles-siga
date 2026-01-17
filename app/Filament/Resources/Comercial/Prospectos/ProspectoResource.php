@@ -4,10 +4,7 @@ namespace App\Filament\Resources\Comercial\Prospectos;
 
 use App\Filament\Clusters\Comercial\ComercialCluster;
 use App\Filament\Resources\Comercial\ProspectoResource\RelationManagers\InteraccionesRelationManager;
-use App\Filament\Resources\Comercial\Prospectos\Pages\CreateProspecto;
-use App\Filament\Resources\Comercial\Prospectos\Pages\EditProspecto;
 use App\Filament\Resources\Comercial\Prospectos\Pages\ListProspectos;
-use App\Filament\Resources\Comercial\Prospectos\Pages\ViewProspecto;
 use App\Filament\Resources\Comercial\Prospectos\RelationManagers\ProcesosVentaRelationManager;
 use App\Filament\Resources\Comercial\Prospectos\Schemas\ProspectoForm;
 use App\Filament\Resources\Comercial\Prospectos\Schemas\ProspectoInfolist;
@@ -20,7 +17,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use UnitEnum;
 
 class ProspectoResource extends Resource
 {

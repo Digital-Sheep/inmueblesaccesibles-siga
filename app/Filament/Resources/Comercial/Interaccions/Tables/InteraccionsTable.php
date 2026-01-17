@@ -6,14 +6,11 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 class InteraccionsTable
@@ -30,15 +27,13 @@ class InteraccionsTable
                             ?? $record->entidad->nombre_completo_virtual
                             ?? 'Sin Nombre';
                     })
-                    ->searchable() // Esto requerirá un poco más de lógica en el query, pero para visualización funciona
+                    ->searchable()
                     ->weight('bold'),
-                // Columna principal que usa el Accessor (el Resumen que creamos en el Modelo)
                 TextColumn::make('resumen_interaccion')
                     ->label('Interacción')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
-
                 TextColumn::make('entidad_type')
                     ->label('Relacionado con')
                     ->badge()
@@ -65,9 +60,9 @@ class InteraccionsTable
                 IconColumn::make('es_venta_cruzada')
                     ->label('Venta Cruzada')
                     ->boolean()
-                    ->trueIcon('heroicon-o-users') // Icono de dos personas (colaboración)
-                    ->trueColor('warning') // Color ámbar para destacar
-                    ->falseIcon('') // Ocultar si no es venta cruzada para no ensuciar
+                    ->trueIcon('heroicon-o-users')
+                    ->trueColor('warning')
+                    ->falseIcon('')
                     ->toggleable(),
             ])
             ->filters([
@@ -88,12 +83,17 @@ class InteraccionsTable
                     ->trueLabel('Solo Ventas Cruzadas (Bonos)')
                     ->falseLabel('Registros Propios'),
             ])
-            ->actions([
-                ViewAction::make(),
-                EditAction::make(),
+            ->recordAction(EditAction::class)
+            ->recordActions([
+                EditAction::make()
+                    ->label('Detalles')
+                    ->modalHeading('Datos de la interacción')
+                    ->modalWidth('2xl')
+                    ->slideOver()
+                    ->button(),
                 DeleteAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
