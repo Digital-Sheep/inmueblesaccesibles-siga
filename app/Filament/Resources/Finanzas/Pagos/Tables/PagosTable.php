@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources\Finanzas\Pagos\Tables;
 
+use App\Filament\Resources\Comercial\Clientes\ClienteResource;
 use App\Models\Archivo;
 use App\Models\Cliente;
+use App\Models\Interaccion;
 use App\Models\Pago;
 use App\Models\ProcesoCompra;
 use App\Models\ProcesoVenta;
 use App\Models\Prospecto;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -91,10 +94,11 @@ class PagosTable
                                 // Crear el Cliente
                                 $nuevoCliente = Cliente::create([
                                     'nombres' => $interesado->nombre_completo,
-                                    'apellido_paterno' => '.',
+                                    'apellido_paterno' => '',
                                     'email' => $interesado->email,
                                     'celular' => $interesado->celular,
                                     'sucursal_id' => $interesado->sucursal_id,
+                                    'expediente_completo' => false,
                                     'usuario_responsable_id' => $interesado->usuario_responsable_id,
                                     'origen' => 'CONVERSION_PROSPECTO',
                                 ]);
@@ -113,17 +117,44 @@ class PagosTable
                                         'entidad_id'   => $nuevoCliente->id,
                                     ]);
 
+                                Interaccion::where('entidad_type', Prospecto::class)
+                                    ->where('entidad_id', $interesado->id)
+                                    ->update(['entidad_type' => Cliente::class, 'entidad_id' => $nuevoCliente->id]);
+
                                 // Cerrar el prospecto
                                 $interesado->update([
                                     'estatus' => 'CLIENTE',
                                     'convertido_a_cliente_id' => $nuevoCliente->id,
                                 ]);
 
+                                // Notificaciones
                                 Notification::make()
+                                    ->title('Pago Validado')
                                     ->success()
-                                    ->title('¡Nuevo Cliente!')
-                                    ->body("El prospecto ha sido convertido a Cliente y la venta avanza a Dictaminación.")
+                                    ->body('El cliente se ha creado correctamente.')
                                     ->send();
+
+                                $asesor = User::find($interesado->usuario_responsable_id);
+
+                                $supervisores = User::role(['GAD_Administracion', 'Super_Admin', 'Direccion_Comercial'])->get();
+
+                                $destinatarios = $supervisores
+                                    ->merge([$asesor])
+                                    ->unique('id')
+                                    ->filter();
+
+                                if ($asesor) {
+                                    Notification::make()
+                                        ->title('Cliente creado - Expediente pendiente')
+                                        ->warning()
+                                        ->body("El pago de {$nuevoCliente->nombres} fue validado. Faltan datos fiscales (RFC, CURP, Domicilio).")
+                                        ->actions([
+                                            Action::make('completar')
+                                                ->button()
+                                                ->url(ClienteResource::getUrl('edit', ['record' => $nuevoCliente->id])),
+                                        ])
+                                        ->sendToDatabase($destinatarios);
+                                }
                             } else {
                                 $proceso->update(['estatus' => 'APARTADO_VALIDADO']);
                             }

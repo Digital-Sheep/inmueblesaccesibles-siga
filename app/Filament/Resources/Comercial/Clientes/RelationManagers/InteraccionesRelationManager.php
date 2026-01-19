@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Comercial\ClienteResource\RelationManagers;
+namespace App\Filament\Resources\Comercial\Clientes\RelationManagers;
 
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;

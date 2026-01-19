@@ -10,11 +10,17 @@ use Filament\Resources\Pages\ListRecords;
 class ListEventoAgendas extends ListRecords
 {
     protected static string $resource = EventoAgendaResource::class;
+    protected string $view = 'filament.pages.agenda-full';
+
+    public function getTitle(): string
+    {
+        return 'Agenda Comercial';
+    }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            // CreateAction::make(),
         ];
     }
 
@@ -23,5 +29,10 @@ class ListEventoAgendas extends ListRecords
         return [
             AgendaComercialWidget::class,
         ];
+    }
+
+    public function getHeaderWidgetsColumns(): int | array
+    {
+        return 1;
     }
 }

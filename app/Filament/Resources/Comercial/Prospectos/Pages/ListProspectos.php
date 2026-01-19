@@ -20,7 +20,7 @@ class ListProspectos extends ListRecords
             CreateAction::make()
                 ->label('Nuevo prospecto')
                 ->modalHeading('Registrar nuevo prospecto')
-                ->modalWidth('lg')
+                ->modalWidth('xl')
                 ->createAnother(false)
 
                 ->before(function (array $data, \Filament\Actions\CreateAction $action) {

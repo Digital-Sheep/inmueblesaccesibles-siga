@@ -276,23 +276,49 @@ return new class extends Migration
         Schema::create('interacciones', function (Blueprint $table) {
             $table->id();
 
-            $table->nullableMorphs('entidad');
+            $table->morphs('entidad');
 
-            $table->enum('tipo', ['LLAMADA', 'WHATSAPP', 'CORREO', 'VISITA_SUCURSAL', 'VISITA_PROPIEDAD', 'NOTA_INTERNA']);
-            $table->enum('resultado', ['CONTACTADO', 'BUZON', 'CITA_AGENDADA', 'NO_INTERESA', 'SIN_RESPUESTA'])->nullable();
+            $table->string('titulo')->nullable()->comment('Resumen corto para agenda (Ej: Llamar por INE)');
 
-            $table->text('comentario'); // Detalle de la interacción
-            $table->dateTime('fecha_programada')->nullable(); // Si es una cita futura
-            $table->dateTime('fecha_realizada')->nullable();  // Cuándo ocurrió
+            $table->enum('tipo', [
+                'LLAMADA',
+                'WHATSAPP',
+                'CORREO',
+                'VISITA_SUCURSAL',
+                'VISITA_PROPIEDAD',
+                'NOTA_INTERNA',
+                'TAREA_GENERAL'
+            ]);
 
-            $table->foreignId('usuario_id')->constrained('users');
+            $table->enum('estatus', ['PENDIENTE', 'COMPLETADA', 'CANCELADA', 'VENCIDA'])
+                  ->default('COMPLETADA')
+                  ->comment('Controla si aparece en Agenda (Pendiente) o Historial (Completada)');
+
+            $table->dateTime('fecha_programada')->comment('Fecha intención o agendada');
+            $table->dateTime('fecha_realizada')->nullable()->comment('Fecha real de ejecución (Check)');
+
+            $table->enum('resultado', [
+                'CONTACTADO',
+                'BUZON',
+                'CITA_AGENDADA',
+                'NO_INTERESA',
+                'SIN_RESPUESTA',
+                'LLAMAR_MAS_TARDE',
+                'DATOS_INCORRECTOS'
+            ])->nullable();
+
+            $table->text('comentario')->nullable();
+            $table->json('evidencia')->nullable();  // Array de rutas de archivos (Fotos/PDF)
+
+            // 6. Auditoría
+            $table->foreignId('usuario_id')->constrained('users')->comment('Quien debe realizarla o la realizó');
 
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+
             $table->timestamps();
             $table->softDeletes();
         });
-
 
         // ==========================================
         // 3. MÓDULO JURÍDICO

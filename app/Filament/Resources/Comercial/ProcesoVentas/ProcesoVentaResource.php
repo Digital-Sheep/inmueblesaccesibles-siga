@@ -62,6 +62,7 @@ class ProcesoVentaResource extends Resource
     {
         return [
             'index' => ListProcesoVentas::route('/'),
+            'view' => ViewProcesoVenta::route('/{record}'),
         ];
     }
 

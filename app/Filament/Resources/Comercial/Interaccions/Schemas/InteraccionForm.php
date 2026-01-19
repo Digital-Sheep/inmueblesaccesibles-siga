@@ -12,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class InteraccionForm
@@ -28,7 +29,8 @@ class InteraccionForm
                             ->types([
                                 Type::make(Prospecto::class)
                                     ->label('Prospecto')
-                                    ->titleAttribute('nombre_completo'),
+                                    ->titleAttribute('nombre_completo')
+                                    ->modifyOptionsQueryUsing(fn (Builder $query) => $query->soloProspectos()),
 
                                 Type::make(Cliente::class)
                                     ->label('Cliente')

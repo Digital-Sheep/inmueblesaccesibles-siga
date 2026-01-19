@@ -82,54 +82,10 @@ class ProcesoVentasTable
                     ->relationship('vendedor', 'name')
                     ->label('Vendedor'),
             ])
+            ->recordAction(ViewAction::class)
             ->recordActions([
-                // Action::make('descartar')
-                //     ->label('Descartar Proceso')
-                //     ->icon('heroicon-o-x-circle')
-                //     ->color('danger')
-                //     ->requiresConfirmation()
-                //     ->modalHeading('¿Descartar este proceso?')
-                //     ->modalDescription('Esta acción cancelará el proceso de venta. Se validarán los intentos de contacto obligatorios.')
-                //     ->action(function (ProcesoVenta $record) {
-
-                //         // 1. Validar intentos del Asesor (Regla: Mínimo 2)
-                //         if ($record->intentos_contacto_asesor < 2) {
-                //             Notification::make()
-                //                 ->danger()
-                //                 ->title('Bloqueo de Proceso')
-                //                 ->body("No se puede descartar. El ASESOR debe realizar al menos 2 intentos de contacto (Actuales: {$record->intentos_contacto_asesor}).")
-                //                 ->send();
-
-                //             // Detenemos la acción (halt)
-                //             return;
-                //         }
-
-                //         // 2. Validar intentos del Gerente (Si ya escaló a esa etapa)
-                //         if ($record->etapa_seguimiento === 'GERENTE_LOCAL' && $record->intentos_contacto_gerente < 2) {
-                //             Notification::make()
-                //                 ->danger()
-                //                 ->title('Bloqueo de Gerencia')
-                //                 ->body("El GERENTE LOCAL debe realizar sus 2 intentos de recuperación antes del cierre definitivo.")
-                //                 ->send();
-                //             return;
-                //         }
-
-                //         // 3. Si pasa las reglas, actualizamos a CANCELADO
-                //         $record->update([
-                //             'estatus' => 'CANCELADO',
-                //             'motivo_cancelacion' => 'Descartado tras cumplimiento de seguimiento obligatorio.'
-                //         ]);
-
-                //         Notification::make()
-                //             ->success()
-                //             ->title('Proceso Descartado')
-                //             ->body('El proceso ha sido cancelado correctamente.')
-                //             ->send();
-                //     })
-                //     // Solo mostrar si el proceso está activo (no cancelado ni cerrado)
-                //     ->visible(fn(ProcesoVenta $record) => !in_array($record->estatus, ['CANCELADO', 'CERRADO_GANADO'])),
                 Action::make('subir_aviso')
-                    ->label('1. Subir Aviso de privacidad')
+                    ->label('Subir Aviso de privacidad')
                     ->icon('heroicon-o-shield-check')
                     ->button()
                     ->color('primary')
@@ -162,7 +118,7 @@ class ProcesoVentasTable
                     }),
 
                 Action::make('registrar_visita')
-                    ->label('2. Registrar visita')
+                    ->label('Registrar visita')
                     ->icon('heroicon-o-map-pin')
                     ->button()
                     ->color('warning')
@@ -176,7 +132,7 @@ class ProcesoVentasTable
                     }),
 
                 Action::make('generar_contrato')
-                    ->label('3. Generar contrato')
+                    ->label('Generar contrato')
                     ->icon('heroicon-o-document-text')
                     ->button()
                     ->visible(fn(ProcesoVenta $record) => $record->estatus === 'VISITA_REALIZADA')
@@ -191,7 +147,7 @@ class ProcesoVentasTable
                     }),
 
                 Action::make('subir_contrato_firmado')
-                    ->label('4. Subir contrato firmado')
+                    ->label('Subir contrato firmado')
                     ->icon('heroicon-o-pencil-square')
                     ->button()
                     ->color('warning')
@@ -230,7 +186,7 @@ class ProcesoVentasTable
                     }),
 
                 Action::make('subir_pago')
-                    ->label('5. Subir pago')
+                    ->label('Subir pago')
                     ->icon('heroicon-o-currency-dollar')
                     ->button()
                     ->color('success')
@@ -312,7 +268,7 @@ class ProcesoVentasTable
                     ->modalWidth('lg'),
 
                 Action::make('solicitar_dictamen')
-                    ->label('6. Solicitar dictamen')
+                    ->label('Solicitar dictamen')
                     ->icon('heroicon-o-scale')
                     ->button()
                     ->color('info')
@@ -380,12 +336,12 @@ class ProcesoVentasTable
                     }),
 
                 Action::make('subir_enganche')
-                    ->label('7. Subir enganche (Cierre)')
+                    ->label('Subir enganche (Cierre)')
                     ->icon('heroicon-o-banknotes')
                     ->button()
                     ->color('success')
                     ->visible(fn(ProcesoVenta $record) => $record->estatus === 'DICTAMINADO_R2')
-                    ->form([
+                    ->schema([
                         Section::make('Registro de liquidación')
                             ->description('Sube el comprobante del pago complementario para la cesión.')
                             ->schema([
@@ -444,8 +400,7 @@ class ProcesoVentasTable
                         // }
 
                         Notification::make()->success()->title('Enganche Enviado a Validación')->send();
-                    }),
-
+                    })
             ])
             ->defaultSort('created_at', 'desc');
     }

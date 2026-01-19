@@ -187,12 +187,12 @@ class CarterasTable
                                 ->body("Se importaron {$contador} propiedades correctamente.")
                                 ->send();
 
-                            $gerentes = User::where('sucursal_id', $record->sucursal_id)->role('Gerente_Sucursal')->get();
+                            $supervisores = User::where('sucursal_id', $record->sucursal_id)->role(['Direccion_Legal', 'Direccion_Comercial'])->get();
 
-                            if ($gerentes->isNotEmpty()) {
+                            if ($supervisores->isNotEmpty()) {
                                 Notification::make()
                                     ->title('📢 Nueva cartera por validar')
-                                    ->body("Se han cargado **{$contador} propiedades** nuevas para tu sucursal en la cartera **{$record->nombre}**.\n\nPor favor, revisa los borradores y valídalos para venta.")
+                                    ->body("Se han cargado {$contador} propiedades nuevas para tu sucursal en la cartera {$record->nombre}.\n\nPor favor, revisa los borradores y valídalos para venta.")
                                     ->warning()
                                     ->actions([
                                         Action::make('revisar')
@@ -202,7 +202,7 @@ class CarterasTable
                                                 'tableFilters[estatus_comercial][value]' => 'BORRADOR'
                                             ]), shouldOpenInNewTab: true),
                                     ])
-                                    ->sendToDatabase($gerentes);
+                                    ->sendToDatabase($supervisores);
                             }
                         } catch (\Exception $e) {
                             DB::rollBack();

@@ -15,14 +15,17 @@ class Interaccion extends Model
     protected $table = 'interacciones';
 
     protected $fillable = [
-        'entidad_type', // Prospecto, Cliente, etc.
+        'entidad_type',
         'entidad_id',
-        'tipo',        // LLAMADA, WHATSAPP, etc.
-        'resultado',   // CONTESTO, BUZON...
+        'titulo',
+        'tipo',
+        'estatus',
+        'resultado',
         'comentario',
+        'evidencia',
         'fecha_programada',
         'fecha_realizada',
-        'usuario_id',  // Quien hizo la interacción
+        'usuario_id',
         'created_by',
         'updated_by',
     ];
@@ -30,16 +33,35 @@ class Interaccion extends Model
     protected $casts = [
         'fecha_programada' => 'datetime',
         'fecha_realizada' => 'datetime',
+        'evidencia' => 'array',
     ];
 
     public function getResumenInteraccionAttribute(): string
     {
-        // Formatea la fecha de interacción (o de registro) y trunca el comentario
-        $fecha = $this->fecha_realizada ?? $this->created_at;
-        $fechaFormateada = $fecha ? $fecha->format('d/M H:i') : 'PNDT';
-        $comentario = Str::limit($this->comentario, 30);
+        $fecha = $this->fecha_realizada ?? $this->fecha_programada;
+        $fechaFmt = $fecha ? $fecha->format('d/M H:i') : 'S/F';
 
-        return "{$this->tipo} ({$fechaFormateada}): {$comentario}";
+        $texto = $this->titulo ?? Str::limit($this->comentario, 40);
+        $icono = $this->estatus === 'PENDIENTE' ? '⏳' : '✅';
+
+        return "{$icono} {$this->tipo} ({$fechaFmt}): {$texto}";
+    }
+
+    // --- SCOPES (Filtros Rápidos) ---
+
+    // Para mostrar en el Timeline (Lo que ya pasó)
+    public function scopeHistorial($query)
+    {
+        return $query->where('estatus', 'COMPLETADA')
+            ->orderBy('fecha_realizada', 'desc');
+    }
+
+    // Para mostrar en el Calendario/Agenda (Lo que viene)
+    public function scopeAgenda($query)
+    {
+        return $query->where('estatus', 'PENDIENTE')
+            ->whereNull('fecha_realizada')
+            ->orderBy('fecha_programada', 'asc');
     }
 
     // --- RELACIONES ---

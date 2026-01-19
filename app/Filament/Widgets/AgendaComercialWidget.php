@@ -5,113 +5,273 @@ namespace App\Filament\Widgets;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 use App\Models\EventoAgenda;
 use App\Models\Interaccion;
-use Filament\Forms;
-use Filament\Actions; // Importar acciones
-use Illuminate\Support\Facades\Auth;
-use Filament\Actions\Contracts\HasActions;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Actions\Concerns\InteractsWithActions;
+use App\Models\Prospecto;
 use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Components\Hidden;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Schemas\Components\Grid;
 
-class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasActions
+class AgendaComercialWidget extends FullCalendarWidget
 {
-    use InteractsWithForms;
-    use InteractsWithActions;
-
     protected static ?int $sort = 3;
-
-    protected int | string | array $columnSpan = 2;
-
-    protected string $view = 'filament-fullcalendar::fullcalendar';
+    public Model|string|null $model = EventoAgenda::class;
 
     /**
-     * Eventos del Calendario
+     * 1. OBTENER EVENTOS (MÉTODO HÍBRIDO)
      */
     public function fetchEvents(array $fetchInfo): array
     {
-        $user = Auth::user();
         $eventos = [];
 
-        // 1. Citas
-        $agendas = EventoAgenda::where('usuario_id', $user->id)
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // 1. DEFINIR SI ES SUPERVISOR/ADMIN
+        // Ajusta el nombre del rol a como lo tengas en tu BD ('Super_Admin', 'Director_Comercial', etc.)
+        $esAdmin = $user->hasRole('Super_Admin') || $user->can('ver_toda_la_agenda');
+
+        // ---------------------------------------------------------
+        // A. CITAS DE AGENDA (AZULES)
+        // ---------------------------------------------------------
+        $queryAgendas = EventoAgenda::query()
             ->where('fecha_inicio', '>=', $fetchInfo['start'])
-            ->where('fecha_fin', '<=', $fetchInfo['end'])
-            ->get();
+            ->where('fecha_fin', '<=', $fetchInfo['end']);
+
+        // APLICAR FILTRO SOLO SI NO ES ADMIN
+        if (! $esAdmin) {
+            $queryAgendas->where('usuario_id', $user->id);
+        }
+
+        $agendas = $queryAgendas->with('usuario')->get(); // Traemos 'usuario' para ver de quién es
 
         foreach ($agendas as $agenda) {
+            // Si soy admin, quiero ver de quién es la cita en el título
+            $titulo = $esAdmin
+                ? "{$agenda->titulo} ({$agenda->usuario->name})"
+                : $agenda->titulo;
+
             $eventos[] = [
-                'id' => 'agenda_' . $agenda->id,
-                'title' => $agenda->titulo,
-                'start' => $agenda->fecha_inicio,
-                'end' => $agenda->fecha_fin,
+                'id'              => 'agenda_' . $agenda->id,
+                'title'           => $titulo,
+                'start'           => $agenda->fecha_inicio,
+                'end'             => $agenda->fecha_fin,
                 'backgroundColor' => '#3b82f6',
-                'borderColor' => '#1d4ed8',
-                'extendedProps' => ['tipo' => 'agenda']
+                'borderColor'     => '#2563eb',
+                'extendedProps'   => [
+                    'tipo_origen' => 'agenda',
+                    'descripcion' => $agenda->descripcion
+                ]
             ];
         }
 
-        // 2. Pendientes
-        $pendientes = Interaccion::where('usuario_id', $user->id)
+        // ---------------------------------------------------------
+        // B. TAREAS PENDIENTES (NARANJAS)
+        // ---------------------------------------------------------
+        $queryPendientes = Interaccion::query()
+            ->where('estatus', '!=', 'COMPLETADA')
             ->whereNotNull('fecha_programada')
-            ->where('fecha_programada', '>=', $fetchInfo['start'])
-            ->where('fecha_programada', '<=', $fetchInfo['end'])
-            ->with(['entidad'])
-            ->get();
+            ->whereBetween('fecha_programada', [$fetchInfo['start'], $fetchInfo['end']])
+            ->with(['entidad', 'usuario']); // Cargamos usuario también
+
+        // APLICAR FILTRO SOLO SI NO ES ADMIN
+        if (! $esAdmin) {
+            $queryPendientes->where('usuario_id', $user->id);
+        }
+
+        $pendientes = $queryPendientes->get();
 
         foreach ($pendientes as $tarea) {
-            $nombre = $tarea->entidad->nombre_completo ??
-                $tarea->entidad->nombre_completo_virtual ??
-                'Prospecto';
+            $cliente = $tarea->entidad->nombre_completo
+                ?? $tarea->entidad->name
+                ?? 'Prospecto';
+
+            // Para el admin, mostramos quién es el responsable de la tarea
+            $responsable = $esAdmin ? " - {$tarea->usuario->name}" : "";
 
             $eventos[] = [
-                'id' => 'tarea_' . $tarea->id,
-                'title' => "📞 {$tarea->tipo}: {$nombre}",
-                'start' => $tarea->fecha_programada,
+                'id'              => 'tarea_' . $tarea->id,
+                'title'           => "📞 {$tarea->tipo}: {$cliente}{$responsable}",
+                'start'           => $tarea->fecha_programada,
+                'end'             => Carbon::parse($tarea->fecha_programada)->addMinutes(30),
                 'backgroundColor' => '#f59e0b',
-                'borderColor' => '#d97706',
-                'extendedProps' => ['tipo' => 'tarea']
+                'borderColor'     => '#d97706',
+                'extendedProps'   => [
+                    'tipo_origen' => 'tarea'
+                ]
             ];
         }
 
         return $eventos;
     }
 
-    /**
-     * Formulario de creación
-     */
     public function getFormSchema(): array
     {
         return [
             Grid::make(2)->schema([
-                TextInput::make('titulo')->required(),
+                TextInput::make('titulo')
+                    ->label('Título de la Cita')
+                    ->required()
+                    ->columnSpanFull(),
+
                 Select::make('tipo')
-                    ->options(['CITA' => 'Cita', 'LLAMADA' => 'Llamada'])
+                    ->options([
+                        'CITA_VISITA' => 'Visita a Propiedad',
+                        'FIRMA_CONTRATO' => 'Firma de Contrato',
+                        'REUNION_INTERNA' => 'Reunión Interna',
+                    ])
                     ->required(),
+
+                Select::make('participante_id')
+                    ->label('Prospecto / Cliente')
+                    ->options(Prospecto::all()->pluck('nombre_completo', 'id'))
+                    ->searchable()
+                    ->preload(),
+
+                Hidden::make('participante_type')
+                    ->default(Prospecto::class),
+
                 DateTimePicker::make('fecha_inicio')->required(),
-                DateTimePicker::make('fecha_fin')->required(),
+                DateTimePicker::make('fecha_fin')
+                    ->required()
+                    ->after('fecha_inicio'),
+
+                Textarea::make('descripcion')
+                    ->rows(3)
+                    ->columnSpanFull(),
+
+                Hidden::make('usuario_id')
+                    ->default(Auth::id()),
             ]),
         ];
     }
 
-    // Acción de crear
-    public function createEvent(array $data): void
+    /**
+     * 3. MANEJAR CLIC EN EVENTO
+     */
+    public function onEventClick(array $event): void
     {
-        EventoAgenda::create([
-            'usuario_id' => Auth::id(),
-            'titulo' => $data['titulo'],
-            'tipo' => $data['tipo'],
-            'fecha_inicio' => $data['fecha_inicio'],
-            'fecha_fin' => $data['fecha_fin'],
-        ]);
-        $this->refreshEvents();
+        $fullId = $event['id'] ?? '';
+        $parts  = explode('_', $fullId);
+
+        if (count($parts) < 2) return;
+
+        $tipo   = $parts[0];
+        $idReal = $parts[1];
+
+        if ($tipo === 'agenda') {
+            $this->mountAction('editAgenda', ['record' => $idReal]);
+        } elseif ($tipo === 'tarea') {
+            $this->mountAction('editTarea', ['record' => $idReal]);
+        }
+    }
+
+    /**
+     * 4. DRAG & DROP (ACTUALIZACIÓN DE FECHAS)
+     */
+    public function onEventDrop(array $event, array $oldEvent, array $relatedEvents, array $delta, ?array $oldResource, ?array $newResource): bool
+    {
+        $fullId = $event['id'] ?? '';
+        $parts  = explode('_', $fullId);
+
+        if (count($parts) < 2) return true; // Revertir si falla
+
+        $tipo   = $parts[0];
+        $idReal = $parts[1];
+
+        // Convertimos fechas considerando zona horaria
+        $newStart = Carbon::parse($event['start'])->setTimezone(config('app.timezone'));
+        $newEnd   = isset($event['end']) ? Carbon::parse($event['end'])->setTimezone(config('app.timezone')) : null;
+
+        if ($tipo === 'agenda') {
+            $cita = EventoAgenda::find($idReal);
+            if ($cita) {
+                $cita->update([
+                    'fecha_inicio' => $newStart,
+                    'fecha_fin'    => $newEnd ?? $cita->fecha_fin, // Si no hay fin, mantenemos duración o calculamos
+                ]);
+                return false; // Éxito (no revertir)
+            }
+        } elseif ($tipo === 'tarea') {
+            $tarea = Interaccion::find($idReal);
+            if ($tarea) {
+                $tarea->update([
+                    'fecha_programada' => $newStart,
+                ]);
+                return false; // Éxito
+            }
+        }
+
+        return true; // Revertir si no encontró registro
+    }
+
+    /**
+     * 5. DEFINICIÓN DE ACCIONES (MODALES DE EDICIÓN)
+     */
+    protected function getActions(): array
+    {
+        return [
+            // --- MODAL A: Editar Cita de Agenda ---
+            EditAction::make('editAgenda')
+                ->model(EventoAgenda::class)
+                ->modalHeading('Editar Cita de Agenda')
+                ->schema([
+                    Grid::make(2)->schema([
+                        TextInput::make('titulo')->required()->columnSpanFull(),
+                        DateTimePicker::make('fecha_inicio')->required(),
+                        DateTimePicker::make('fecha_fin')->required(),
+                        Select::make('tipo')
+                            ->options(['CITA_VISITA' => 'Visita', 'REUNION' => 'Reunión'])
+                            ->required(),
+                        Textarea::make('descripcion')->columnSpanFull(),
+                    ])
+                ])
+                ->footerActions([
+                    DeleteAction::make()->model(EventoAgenda::class) // Permitir borrar cita
+                ]),
+
+            // --- MODAL B: Gestionar Tarea (Interacción) ---
+            EditAction::make('editTarea')
+                ->model(Interaccion::class)
+                ->modalHeading('Gestionar Tarea Pendiente')
+                ->color('warning')
+                ->schema([
+                    Grid::make(1)->schema([
+                        TextInput::make('titulo')
+                            ->disabled() // El título no se cambia aquí, viene del CRM
+                            ->label('Asunto'),
+
+                        DateTimePicker::make('fecha_programada')
+                            ->label('Reprogramar Fecha')
+                            ->required(),
+
+                        Textarea::make('comentario')
+                            ->label('Resultados / Notas')
+                            ->required(),
+
+                        Select::make('estatus')
+                            ->options([
+                                'PENDIENTE' => 'Pendiente',
+                                'COMPLETADA' => 'Completada (Cerrar)',
+                                'CANCELADA' => 'Cancelada',
+                            ])
+                            ->default('PENDIENTE')
+                            ->required(),
+                    ])
+                ])
+                // Al guardar, si se marca completada, desaparece del calendario (porque filtramos por pendiente)
+                ->after(function () {
+                    $this->refreshEvents();
+                }),
+        ];
     }
 
     public function config(): array
@@ -122,195 +282,11 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
                 'center' => 'title',
                 'right' => 'dayGridMonth,timeGridWeek,listWeek',
             ],
-            'initialView' => 'dayGridMonth',
-            'height' => '800px',
-            'contentHeight' => 'auto',
+            'initialView' => 'timeGridWeek', // Vista semanal es mejor para agenda operativa
+            'slotMinTime' => '07:00:00',
+            'slotMaxTime' => '21:00:00',
+            'locale' => 'es',
+            'allDaySlot' => false,
         ];
-    }
-
-    /**
-     * Actualizar evento al soltar (Drag & Drop)
-     * Firma exacta: 6 argumentos.
-     */
-    public function onEventDrop(array $event, array $oldEvent, array $relatedEvents, array $delta, ?array $oldResource, ?array $newResource): bool
-    {
-        // 1. Obtener ID del evento movido (viene directo en $event)
-        $fullId = $event['id'] ?? '';
-        $parts  = explode('_', $fullId);
-
-        // Validación básica
-        if (count($parts) < 2) {
-            // Devuelve TRUE para revertir el movimiento (que regrese a su lugar original)
-            return true;
-        }
-
-        $tipo   = $parts[0]; // 'agenda' o 'tarea'
-        $idReal = $parts[1]; // ID numérico
-
-        // 2. Obtener nuevas fechas (vienen directo en $event)
-        $newStart = $event['start'] ?? null;
-        $newEnd   = $event['end'] ?? null;
-
-        // 3. Actualizar Base de Datos
-
-        // CASO A: AGENDA
-        if ($tipo === 'agenda') {
-            $cita = \App\Models\EventoAgenda::find($idReal);
-            if ($cita) {
-                $cita->update([
-                    'fecha_inicio' => $newStart,
-                    'fecha_fin'    => $newEnd ?? $cita->fecha_fin,
-                ]);
-                // Retornamos FALSE para indicar "No revertir" (aceptar el cambio)
-                return false;
-            }
-        }
-
-        // CASO B: TAREA
-        elseif ($tipo === 'tarea') {
-            $tarea = \App\Models\Interaccion::find($idReal);
-            if ($tarea) {
-                $tarea->update([
-                    'fecha_programada' => $newStart,
-                ]);
-                return false;
-            }
-        }
-
-        // Si algo falló, devolvemos TRUE para que el evento regrese visualmente a su lugar anterior
-        return true;
-    }
-
-    protected function getActions(): array
-    {
-        return [
-            // -----------------------------------------------------------------
-            // 1. EDITAR CITA DE AGENDA
-            // -----------------------------------------------------------------
-            EditAction::make('editAgenda')
-                ->model(EventoAgenda::class)
-                ->modalHeading('Editar Cita')
-                ->modalWidth('lg') // Hacemos el modal un poco más ancho
-                ->form([
-                    // Fila 1: Título y Color
-                    Grid::make(2)->schema([
-                        TextInput::make('titulo')
-                            ->label('Asunto de la Cita')
-                            ->required()
-                            ->columnSpan(1),
-
-                        ColorPicker::make('color')
-                            ->label('Color de Etiqueta')
-                            ->columnSpan(1),
-                    ]),
-
-                    // Fila 2: Fechas (Inicio y Fin)
-                    Grid::make(2)->schema([
-                        DateTimePicker::make('fecha_inicio')
-                            ->label('Inicia')
-                            ->seconds(false) // Ocultar segundos para limpieza visual
-                            ->required(),
-
-                        DateTimePicker::make('fecha_fin')
-                            ->label('Termina')
-                            ->seconds(false)
-                            ->required()
-                            // Regla: Que la fecha fin no sea antes que la inicio
-                            ->after('fecha_inicio'),
-                    ]),
-
-                    // Fila 3: Relaciones (Prospecto y Vendedor)
-                    Grid::make(2)->schema([
-                        Select::make('prospecto_id')
-                            ->label('Prospecto / Cliente')
-                            ->relationship('prospecto', 'nombre_completo') // Ajusta 'nombre_completo' a tu campo real
-                            ->searchable() // Vital si tienes muchos prospectos
-                            ->preload()
-                            ->required(),
-
-                        Select::make('user_id')
-                            ->label('Asignado a')
-                            ->relationship('user', 'name')
-                            ->default(fn () => Auth::id())
-                            ->required(),
-                    ]),
-
-                    // Fila 4: Comentarios
-                    Textarea::make('descripcion')
-                        ->label('Notas / Agenda')
-                        ->rows(3)
-                        ->columnSpanFull(),
-                ]),
-
-            // -----------------------------------------------------------------
-            // 2. EDITAR TAREA / INTERACCIÓN
-            // -----------------------------------------------------------------
-            EditAction::make('editTarea')
-                ->model(Interaccion::class)
-                ->modalHeading('Detalle de Interacción')
-                ->color('warning') // Botón naranja para distinguir visualmente
-                ->form([
-                    Grid::make(2)->schema([
-                        Select::make('tipo_interaccion') // Ej: Llamada, Whatsapp, Correo
-                            ->options([
-                                'llamada' => 'Llamada Telefónica',
-                                'whatsapp' => 'WhatsApp',
-                                'correo' => 'Correo Electrónico',
-                                'visita' => 'Visita',
-                            ])
-                            ->required()
-                            ->label('Canal'),
-
-                        DateTimePicker::make('fecha_programada')
-                            ->label('Fecha Programada')
-                            ->seconds(false)
-                            ->required(),
-                    ]),
-
-                    Select::make('prospecto_id')
-                        ->label('Prospecto')
-                        ->relationship('prospecto', 'nombre_completo') // Ajusta el campo nombre
-                        ->searchable()
-                        ->required(),
-
-                    Textarea::make('observaciones')
-                        ->label('Resultado / Notas')
-                        ->placeholder('¿Qué sucedió en esta interacción?')
-                        ->rows(3)
-                        ->columnSpanFull(),
-
-                    // Checkbox rápido para completar la tarea ahí mismo
-                    Toggle::make('completada')
-                        ->label('Marcar como Completada')
-                        ->inline(false),
-                ]),
-        ];
-    }
-
-    /**
-     * Se ejecuta al hacer clic en un evento.
-     * Firma exacta: 3 argumentos (según la versión Beta).
-     */
-    public function onEventClick(array $event): void
-    {
-        // 1. Obtener el ID compuesto (Ej: "agenda_15")
-        $fullId = $event['id'] ?? '';
-        $parts  = explode('_', $fullId);
-
-        if (count($parts) < 2) return;
-
-        $tipo   = $parts[0]; // 'agenda' o 'tarea'
-        $idReal = $parts[1]; // '15'
-
-        // 2. Lanzar el Modal correspondiente
-        if ($tipo === 'agenda') {
-            $this->mountAction('editAgenda', [
-                'record' => $idReal, // Le pasamos el ID real para que sepa qué editar
-            ]);
-        } elseif ($tipo === 'tarea') {
-            $this->mountAction('editTarea', [
-                'record' => $idReal,
-            ]);
-        }
     }
 }

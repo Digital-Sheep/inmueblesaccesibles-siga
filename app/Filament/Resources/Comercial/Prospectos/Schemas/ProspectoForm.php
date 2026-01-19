@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Comercial\Prospectos\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -12,8 +13,9 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class ProspectoForm
@@ -23,18 +25,7 @@ class ProspectoForm
         return $schema
             ->columns(1)
             ->components([
-                Toggle::make('modo_edicion')
-                    ->label('Habilitar edición')
-                    ->onColor('success')
-                    ->offColor('gray')
-                    ->default(false)
-                    ->live()
-                    ->dehydrated(false)
-                    ->columnSpanFull()
-                    ->visibleOn('edit')
-                    ->hidden(fn(Get $get) => $get('estatus') === 'CLIENTE'),
-
-                Group::make()
+                Section::make('Información del Prospecto')
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -47,11 +38,13 @@ class ProspectoForm
                                 TextInput::make('celular')
                                     ->label('WhatsApp / Celular')
                                     ->tel()
-                                    ->required(),
+                                    ->required()
+                                    ->maxLength(20),
 
                                 TextInput::make('email')
                                     ->label('Correo electrónico')
-                                    ->email(),
+                                    ->email()
+                                    ->maxLength(255),
 
                                 Select::make('estatus')
                                     ->options([
@@ -64,7 +57,8 @@ class ProspectoForm
                                     ])
                                     ->default('NUEVO')
                                     ->live()
-                                    ->native(false),
+                                    ->native(false)
+                                    ->required(),
 
                                 Select::make('origen')
                                     ->options([
@@ -79,15 +73,43 @@ class ProspectoForm
 
                                 Select::make('sucursal_id')
                                     ->relationship('sucursal', 'nombre')
+                                    ->label('Sucursal')
                                     ->default(fn() => Auth::user()->sucursal_id)
                                     ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set) {
+                                        $set('usuario_responsable_id', null);
+                                    })
+                                    ->disabled(function () {
+                                        /** @var \App\Models\User $user */
+                                        $user = Auth::user();
+
+                                        return ! $user->can('gestionar_toda_la_red');
+                                    })
+                                    ->dehydrated()
                                     ->native(false),
 
                                 Select::make('usuario_responsable_id')
-                                    ->relationship('responsable', 'name')
                                     ->label('Asesor asignado')
+                                    ->options(function (Get $get) {
+                                        $sucursalId = $get('sucursal_id');
+
+                                        if (! $sucursalId) {
+                                            return [];
+                                        }
+
+                                        return User::where('sucursal_id', $sucursalId)
+                                            ->pluck('name', 'id');
+                                    })
                                     ->default(fn() => Auth::id())
                                     ->required()
+                                    ->disabled(function () {
+                                        /** @var \App\Models\User $user */
+                                        $user = Auth::user();
+
+                                        return ! $user->canAny(['gestionar_sucursal_propia', 'gestionar_toda_la_red']);
+                                    })
+                                    ->dehydrated()
                                     ->native(false),
 
                                 Textarea::make('motivo_descarte')
@@ -100,44 +122,6 @@ class ProspectoForm
                             ]),
                     ])
                     ->columnSpanFull()
-                    ->disabled(function (string $operation, Get $get) {
-                        if ($operation === 'create') {
-                            return false;
-                        }
-
-                        return ! $get('modo_edicion');
-                    }),
-
-                Section::make('Historial de Interacciones')
-                    ->collapsed()
-                    ->description('Agrega notas rápidas o llamadas')
-                    ->schema([
-                        Repeater::make('interacciones')
-                            ->relationship()
-                            ->label('Interacciones')
-                            ->addActionLabel('Agregar Nueva Nota/Llamada')
-                            ->reorderable(false)
-                            ->collapsible()
-                            ->cloneable(false)
-                            ->grid(1)
-                            ->itemLabel(fn(array $state): ?string => $state['titulo'] ?? null)
-                            ->schema([
-                                Grid::make(2)->schema([
-                                    Select::make('tipo_interaccion')
-                                        ->options(['llamada' => 'Llamada', 'whatsapp' => 'WhatsApp', 'nota' => 'Nota'])
-                                        ->required(),
-                                    DateTimePicker::make('fecha_programada')
-                                        ->required(),
-                                ]),
-                                TextInput::make('titulo')->required()->columnSpanFull(),
-                                Textarea::make('observaciones')->rows(2)->columnSpanFull(),
-                            ]),
-                    ])
-                    ->hidden(function (string $operation, Get $get) {
-                        if ($operation === 'create') {
-                            return true;
-                        }
-                    }),
             ]);
     }
 }

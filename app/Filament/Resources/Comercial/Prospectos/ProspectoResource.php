@@ -3,9 +3,7 @@
 namespace App\Filament\Resources\Comercial\Prospectos;
 
 use App\Filament\Clusters\Comercial\ComercialCluster;
-use App\Filament\Resources\Comercial\ProspectoResource\RelationManagers\InteraccionesRelationManager;
 use App\Filament\Resources\Comercial\Prospectos\Pages\ListProspectos;
-use App\Filament\Resources\Comercial\Prospectos\RelationManagers\ProcesosVentaRelationManager;
 use App\Filament\Resources\Comercial\Prospectos\Schemas\ProspectoForm;
 use App\Filament\Resources\Comercial\Prospectos\Schemas\ProspectoInfolist;
 use App\Filament\Resources\Comercial\Prospectos\Tables\ProspectosTable;
@@ -16,7 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class ProspectoResource extends Resource
 {
@@ -49,14 +47,6 @@ class ProspectoResource extends Resource
         return ProspectosTable::configure($table);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            ProcesosVentaRelationManager::class,
-            InteraccionesRelationManager::class,
-        ];
-    }
-
     public static function getPages(): array
     {
         return [
@@ -64,11 +54,31 @@ class ProspectoResource extends Resource
         ];
     }
 
-    public static function getRecordRouteBindingEloquentQuery(): Builder
+    private static function aplicarFiltrosDeSeguridad(Builder $query): Builder
     {
-        return parent::getRecordRouteBindingEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->can('gestionar_toda_la_red')) {
+            return $query;
+        }
+
+        if ($user->can('gestionar_sucursal_propia')) {
+            return $query->where('sucursal_id', $user->sucursal_id);
+        }
+
+        return $query->where('usuario_responsable_id', $user->id);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->soloProspectos();
+        return self::aplicarFiltrosDeSeguridad($query);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        $query = parent::getGlobalSearchEloquentQuery()->soloProspectos();
+        return self::aplicarFiltrosDeSeguridad($query);
     }
 }

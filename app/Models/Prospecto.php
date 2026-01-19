@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -26,6 +27,11 @@ class Prospecto extends Model
         'created_by',
         'updated_by',
     ];
+
+    public function scopeSoloProspectos(Builder $query): Builder
+    {
+        return $query->where('estatus', '!=', 'CLIENTE');
+    }
 
     // --- RELACIONES ---
 
@@ -60,7 +66,22 @@ class Prospecto extends Model
      */
     public function interacciones(): MorphMany
     {
-        return $this->morphMany(Interaccion::class, 'entidad');
+        return $this->morphMany(Interaccion::class, 'entidad')
+            ->orderByRaw('COALESCE(fecha_realizada, created_at) DESC');
+    }
+
+    public function interaccionesPendientes()
+    {
+        return $this->interacciones()
+            ->where('estatus', 'PENDIENTE')
+            ->orderBy('fecha_programada', 'asc');
+    }
+
+    public function interaccionesHistorial()
+    {
+        return $this->interacciones()
+            ->whereIn('estatus', ['COMPLETADA', 'CANCELADA'])
+            ->orderBy('fecha_realizada', 'desc');
     }
 
     /**

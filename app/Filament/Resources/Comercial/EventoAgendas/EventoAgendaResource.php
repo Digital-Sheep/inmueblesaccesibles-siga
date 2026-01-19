@@ -46,10 +46,10 @@ class EventoAgendaResource extends Resource
         return EventoAgendaInfolist::configure($schema);
     }
 
-    public static function table(Table $table): Table
-    {
-        return EventoAgendasTable::configure($table);
-    }
+    // public static function table(Table $table): Table
+    // {
+    //     return EventoAgendasTable::configure($table);
+    // }
 
     public static function getRelations(): array
     {

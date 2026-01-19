@@ -26,6 +26,7 @@ class Cliente extends Model
         'ocupacion',
         'estado_civil',
         'direccion_fiscal', // Calle, número, etc.
+        'expediente_completo',
         'direccion_colonia',
         'codigo_postal',
         'estado_id',
