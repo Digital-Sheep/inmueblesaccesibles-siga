@@ -2,28 +2,47 @@
 
 namespace App\Filament\Widgets;
 
+use Livewire\Attributes\On;
+
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 use App\Models\EventoAgenda;
 use App\Models\Interaccion;
 use App\Models\Prospecto;
-use Filament\Actions\EditAction;
+
 use Filament\Actions\DeleteAction;
-use Filament\Forms\Components\ColorPicker;
+use Saade\FilamentFullCalendar\Actions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+
+use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Grid;
 
-class AgendaComercialWidget extends FullCalendarWidget
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
+
+use Carbon\Carbon;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+
+class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasActions
 {
+    use InteractsWithForms;
+    use InteractsWithActions;
+
     protected static ?int $sort = 3;
     public Model|string|null $model = EventoAgenda::class;
+
+    public Model|int|string|null $record = null;
+
+    public $eventoIdSeleccionado = null;
 
     /**
      * 1. OBTENER EVENTOS (MÉTODO HÍBRIDO)
@@ -157,20 +176,53 @@ class AgendaComercialWidget extends FullCalendarWidget
     /**
      * 3. MANEJAR CLIC EN EVENTO
      */
+    // public function onEventClick(array $event): void
+    // {
+    //     Notification::make()
+    //         ->title('Click Recibido')
+    //         ->body('ID Crudo: ' . ($event['id'] ?? 'Nulo'))
+    //         ->warning() // Color amarillo para distinguir
+    //         ->send();
+
+    //     $fullId = $event['id'] ?? '';
+    //     $parts  = explode('_', $fullId);
+
+    //     if (count($parts) < 2) {
+    //         Notification::make()->title('ID Inválido')->danger()->send();
+    //         return;
+    //     }
+
+    //     $tipo   = $parts[0];
+    //     $idReal = $parts[1];
+
+    //     // if ($tipo === 'agenda') {
+    //     //     Action::make('editAgenda')
+    //     //         ->action(fn() => Notification::make()->title('Cita de Agenda Seleccionada')->success()->send());
+    //     // } elseif ($tipo === 'tarea') {
+    //     //     Action::make('editTarea')
+    //     //         ->action(fn() => Notification::make()->title('Tarea Pendiente Seleccionada')->success()->send());
+    //     // } else {
+    //     //     Notification::make()->title('Tipo de Evento Desconocido')->danger()->send();
+    //     // }
+    //     if ($tipo === 'agenda') {
+    //         $this->mountAction('editAgenda', ['record' => $idReal]);
+    //     } elseif ($tipo === 'tarea') {
+    //         $this->mountAction('editTarea', ['record' => $idReal]);
+    //     }
+    // }
+
     public function onEventClick(array $event): void
     {
-        $fullId = $event['id'] ?? '';
-        $parts  = explode('_', $fullId);
-
+        $parts = explode('_', $event['id'] ?? '');
         if (count($parts) < 2) return;
 
-        $tipo   = $parts[0];
+        $tipo = $parts[0];
         $idReal = $parts[1];
 
         if ($tipo === 'agenda') {
-            $this->mountAction('editAgenda', ['record' => $idReal]);
+            $this->mountAction('editAgenda', ['record_id' => $idReal]);
         } elseif ($tipo === 'tarea') {
-            $this->mountAction('editTarea', ['record' => $idReal]);
+            $this->mountAction('editTarea', ['record_id' => $idReal]);
         }
     }
 
@@ -216,62 +268,246 @@ class AgendaComercialWidget extends FullCalendarWidget
     /**
      * 5. DEFINICIÓN DE ACCIONES (MODALES DE EDICIÓN)
      */
-    protected function getActions(): array
+    // protected function getActions(): array
+    // {
+    //     return [
+    //         // --- MODAL A: Editar Cita de Agenda ---
+    //         Action::make('editAgenda')
+    //             ->modalWidth('lg')
+    //             ->modalHeading('Editar Cita de Agenda')
+    //             ->mountUsing(function (Form $form, array $arguments) {
+    //                 $recordId = $arguments['record'] ?? null;
+
+    //                 if ($recordId && $cita = EventoAgenda::find($recordId)) {
+    //                     $form->fill([
+    //                         'titulo' => $cita->titulo,
+    //                         'fecha_inicio' => $cita->fecha_inicio,
+    //                         'fecha_fin' => $cita->fecha_fin,
+    //                         'tipo' => $cita->tipo,
+    //                         'descripcion' => $cita->descripcion,
+    //                     ]);
+    //                 }
+    //             })
+    //             ->record(fn(array $arguments) => EventoAgenda::find($arguments['record'] ?? null))
+    //             ->schema([
+    //                 Grid::make(2)->schema([
+    //                     TextInput::make('titulo')->required()->columnSpanFull(),
+    //                     DateTimePicker::make('fecha_inicio')->required(),
+    //                     DateTimePicker::make('fecha_fin')->required(),
+    //                     Select::make('tipo')
+    //                         ->options(['CITA_VISITA' => 'Visita', 'REUNION' => 'Reunión'])
+    //                         ->required(),
+    //                     Textarea::make('descripcion')->columnSpanFull(),
+    //                 ])
+    //             ])
+    //             ->action(function (array $data, array $arguments) {
+    //                 $record = EventoAgenda::find($arguments['record']);
+
+    //                 if ($record) {
+    //                     $record->update($data);
+    //                     Notification::make()->title('Cita actualizada')->success()->send();
+    //                     $this->refreshEvents();
+    //                 }
+    //             })
+    //             ->modalFooterActions([
+    //                 DeleteAction::make('delete')
+    //                     ->requiresConfirmation()
+    //                     ->action(function (array $arguments) {
+    //                         $record = EventoAgenda::find($arguments['record']);
+    //                         if ($record) {
+    //                             $record->delete();
+    //                             Notification::make()->title('Cita eliminada')->success()->send();
+    //                         }
+    //                     })
+    //                     ->after(fn() => $this->refreshEvents())
+    //             ]),
+
+    //         // --- MODAL B: Gestionar Tarea (Interacción) ---
+    //         Action::make('editTarea')
+    //             ->modalHeading('Gestionar Tarea Pendiente')
+    //             ->color('warning')
+    //             ->mountUsing(function (Form $form, array $arguments) {
+    //                 $recordId = $arguments['record'] ?? null;
+
+    //                 if ($recordId && $tarea = Interaccion::find($recordId)) {
+    //                     $form->fill([
+    //                         'titulo' => $tarea->titulo,
+    //                         'fecha_programada' => $tarea->fecha_programada,
+    //                         'comentario' => $tarea->comentario,
+    //                         'estatus' => $tarea->estatus,
+    //                     ]);
+    //                 }
+    //             })
+    //             ->schema([
+    //                 Grid::make(1)->schema([
+    //                     TextInput::make('titulo')
+    //                         ->disabled()
+    //                         ->label('Asunto'),
+
+    //                     DateTimePicker::make('fecha_programada')
+    //                         ->label('Reprogramar Fecha')
+    //                         ->required(),
+
+    //                     Textarea::make('comentario')
+    //                         ->label('Resultados / Notas')
+    //                         ->required(),
+
+    //                     Select::make('estatus')
+    //                         ->options([
+    //                             'PENDIENTE' => 'Pendiente',
+    //                             'COMPLETADA' => 'Completada (Cerrar)',
+    //                             'CANCELADA' => 'Cancelada',
+    //                         ])
+    //                         ->default('PENDIENTE')
+    //                         ->required(),
+    //                 ])
+    //             ])
+    //             ->action(function (array $data, array $arguments) {
+    //                 $record = Interaccion::find($arguments['record']);
+    //                 if ($record) {
+    //                     $record->update($data);
+    //                     Notification::make()->title('Tarea actualizada')->success()->send();
+    //                     $this->refreshEvents();
+    //                 }
+    //             }),
+    //     ];
+    // }
+
+    // public function getActions(): array
+    // {
+    //     return [
+    //         Action::make('testAction')
+    //             ->modalHeading('¡Éxito! El modal funciona')
+    //             ->form([
+    //                 TextInput::make('mensaje')
+    //                     ->label('Mensaje del Sistema')
+    //                     ->default('Si lees esto, los modales funcionan.')
+    //                     ->disabled(),
+
+    //                 TextInput::make('id_evento')
+    //                     ->label('ID recibido del calendario')
+    //                     // Recuperamos el argumento pasado desde onEventClick
+    //                     ->default(fn(array $arguments) => $arguments['id_recibido'] ?? 'Nada'),
+    //             ])
+    //             ->action(function () {
+    //                 Notification::make()->title('Acción ejecutada')->success()->send();
+    //             })
+    //             ->cancelParentActions(), // Buena práctica para evitar conflictos
+    //     ];
+    // }
+
+    public function editAgendaAction(): Action
     {
-        return [
-            // --- MODAL A: Editar Cita de Agenda ---
-            EditAction::make('editAgenda')
-                ->model(EventoAgenda::class)
-                ->modalHeading('Editar Cita de Agenda')
-                ->schema([
-                    Grid::make(2)->schema([
-                        TextInput::make('titulo')->required()->columnSpanFull(),
-                        DateTimePicker::make('fecha_inicio')->required(),
-                        DateTimePicker::make('fecha_fin')->required(),
-                        Select::make('tipo')
-                            ->options(['CITA_VISITA' => 'Visita', 'REUNION' => 'Reunión'])
-                            ->required(),
-                        Textarea::make('descripcion')->columnSpanFull(),
-                    ])
+        return Action::make('editAgenda')
+            ->modalHeading('Editar Cita de Agenda')
+            ->modalSubmitActionLabel('Guardar Cambios')
+            ->color('warning')
+            ->mountUsing(function ($form, array $arguments) {
+                $this->eventoIdSeleccionado = $arguments['record_id'] ?? null;
+
+                $cita = EventoAgenda::find($arguments['record_id'] ?? null);
+                if ($cita) {
+                    $form->fill([
+                        'titulo' => $cita->titulo,
+                        'tipo' => $cita->tipo,
+                        'fecha_inicio' => $cita->fecha_inicio,
+                        'fecha_fin' => $cita->fecha_fin,
+                    ]);
+                }
+            })
+            ->schema([
+                TextInput::make('titulo')->required(),
+                Select::make('tipo')
+                    ->options(['CITA_VISITA' => 'Visita', 'FIRMA_CONTRATO' => 'Firma', 'REUNION_INTERNA' => 'Reunión']),
+                Grid::make()->schema([
+                    DateTimePicker::make('fecha_inicio')->required(),
+                    DateTimePicker::make('fecha_fin')->required(),
                 ])
-                ->footerActions([
-                    DeleteAction::make()->model(EventoAgenda::class) // Permitir borrar cita
-                ]),
+            ])
+            ->action(function (array $data, array $arguments) {
+                $cita = EventoAgenda::find($arguments['record_id']);
+                $cita?->update($data);
+                Notification::make()->title('Cita guardada')->success()->send();
+            })
+            ->after(function () {
+                return redirect(request()->header('Referer'));
+            })
+            ->modalFooterActions([
+                Action::make('guardar')
+                    ->label('Guardar Cambios')
+                    ->color('primary')
+                    ->submit('editAgenda'),
+                Action::make('cancelar')
+                    ->label('Cancelar')
+                    ->color('gray')
+                    ->close(),
+                Action::make('borrar')
+                    ->extraAttributes(['style' => 'margin-left: auto'])
+                    ->label('Eliminar Cita')
+                    ->color('danger') // Color rojo
+                    ->icon('heroicon-m-trash') // Icono de basura
+                    ->requiresConfirmation()
+                    ->modalHeading('¿Eliminar cita?')
+                    ->modalDescription('Esta acción no se puede deshacer.')
+                    ->modalSubmitActionLabel('Sí, eliminar')
+                    ->action(function (array $arguments) {
+                        $id = $this->eventoIdSeleccionado;
 
-            // --- MODAL B: Gestionar Tarea (Interacción) ---
-            EditAction::make('editTarea')
-                ->model(Interaccion::class)
-                ->modalHeading('Gestionar Tarea Pendiente')
-                ->color('warning')
-                ->schema([
-                    Grid::make(1)->schema([
-                        TextInput::make('titulo')
-                            ->disabled() // El título no se cambia aquí, viene del CRM
-                            ->label('Asunto'),
+                        if ($id) {
+                            EventoAgenda::find($id)?->delete();
 
-                        DateTimePicker::make('fecha_programada')
-                            ->label('Reprogramar Fecha')
-                            ->required(),
+                            Notification::make()
+                                ->title('Cita eliminada')
+                                ->success()
+                                ->send();
+                        }
 
-                        Textarea::make('comentario')
-                            ->label('Resultados / Notas')
-                            ->required(),
+                        Notification::make()
+                            ->title('Cita eliminada: ID ' . ($id ?? 'N/A'))
+                            ->success()
+                            ->send();
+                    })
+                    ->after(
+                        function () {
+                            return redirect(request()->header('Referer'));
+                        }
+                    ),
+            ]);
+    }
 
-                        Select::make('estatus')
-                            ->options([
-                                'PENDIENTE' => 'Pendiente',
-                                'COMPLETADA' => 'Completada (Cerrar)',
-                                'CANCELADA' => 'Cancelada',
-                            ])
-                            ->default('PENDIENTE')
-                            ->required(),
-                    ])
-                ])
-                // Al guardar, si se marca completada, desaparece del calendario (porque filtramos por pendiente)
-                ->after(function () {
-                    $this->refreshEvents();
-                }),
-        ];
+    public function editTareaAction(): Action
+    {
+        return Action::make('editTarea')
+            ->modalHeading('Gestionar Tarea')
+            ->modalSubmitActionLabel('Guardar Cambios')
+            ->color('primary')
+            ->mountUsing(function ($form, array $arguments) {
+                $tarea = Interaccion::find($arguments['record_id'] ?? null);
+                if ($tarea) {
+                    $form->fill([
+                        'titulo' => $tarea->titulo,
+                        'fecha_programada' => $tarea->fecha_programada,
+                        'estatus' => $tarea->estatus,
+                        'observaciones' => $tarea->observaciones ?? '', // Asegura que no sea null
+                    ]);
+                }
+            })
+            ->schema([
+                TextInput::make('titulo')->disabled(),
+                DateTimePicker::make('fecha_programada')->required(),
+                Select::make('estatus')
+                    ->options(['PENDIENTE' => 'Pendiente', 'COMPLETADA' => 'Completada', 'CANCELADA' => 'Cancelada'])
+                    ->required(),
+                Textarea::make('observaciones')
+            ])
+            ->action(function (array $data, array $arguments) {
+                $tarea = Interaccion::find($arguments['record_id']);
+                $tarea?->update($data);
+                Notification::make()->title('Tarea actualizada')->success()->send();
+            })
+            ->after(function () {
+                return redirect(request()->header('Referer'));
+            });
     }
 
     public function config(): array
@@ -282,11 +518,18 @@ class AgendaComercialWidget extends FullCalendarWidget
                 'center' => 'title',
                 'right' => 'dayGridMonth,timeGridWeek,listWeek',
             ],
-            'initialView' => 'timeGridWeek', // Vista semanal es mejor para agenda operativa
+            'initialView' => 'timeGridWeek', // Vista semanal
             'slotMinTime' => '07:00:00',
             'slotMaxTime' => '21:00:00',
             'locale' => 'es',
             'allDaySlot' => false,
         ];
+    }
+
+    #[On('filament-fullcalendar:refresh')]
+    public function refreshRecords(): void
+    {
+        // Al ejecutarse esto, Livewire sabe que algo cambió
+        // y renderiza de nuevo el componente.
     }
 }
