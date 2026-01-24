@@ -317,6 +317,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'interacciones_eliminar',
             'interacciones_ver_todas',
             'interacciones_exportar',
+            'interacciones_ver_sucursal_completa',
 
             // ==========================================
             // 📅 MÓDULO: EVENTOS / AGENDA
@@ -327,6 +328,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'agenda_eliminar',
             'agenda_ver_todos',
             'agenda_asignar_participantes',
+            'agenda_ver_sucursal_completa',
 
             // ==========================================
             // 📎 MÓDULO: ARCHIVOS / DOCUMENTOS

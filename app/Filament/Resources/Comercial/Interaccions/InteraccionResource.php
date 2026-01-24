@@ -85,4 +85,39 @@ class InteraccionResource extends Resource
                 SoftDeletingScope::class,
             ]);
     }
+
+    // private static function aplicarFiltrosDeSeguridad(Builder $query): Builder
+    // {
+    //     /** @var \App\Models\User $user */
+    //     $user = Auth::user();
+
+    //     // Si tiene permiso de ver TODOS los prospectos
+    //     if ($user->can('interacciones_ver_todas')) {
+    //         return $query;
+    //     }
+
+    //     // Filtro por sucursal
+    //     if ($user->sucursal_id !== null) {
+    //         $query->where('sucursal_id', $user->sucursal_id);
+    //     }
+
+    //     // Si tiene permiso de ver la sucursal completa, no filtramos por usuario
+    //     if (!$user->can('prospectos_ver_sucursal_completa')) {
+    //         $query->where('usuario_responsable_id', $user->id);
+    //     }
+
+    //     return $query;
+    // }
+
+    // public static function getEloquentQuery(): Builder
+    // {
+    //     $query = parent::getEloquentQuery();
+    //     return self::aplicarFiltrosDeSeguridad($query);
+    // }
+
+    // public static function getGlobalSearchEloquentQuery(): Builder
+    // {
+    //     $query = parent::getGlobalSearchEloquentQuery();
+    //     return self::aplicarFiltrosDeSeguridad($query);
+    // }
 }
