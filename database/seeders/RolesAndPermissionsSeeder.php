@@ -154,6 +154,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'propiedades_cambiar_estatus',
             'propiedades_subir_fotos',
             'propiedades_ver_todos',
+            'propiedades_ver_historial',
 
             // ==========================================
             // 💼 MÓDULO: PROCESOS DE VENTA (SVT)
