@@ -45,6 +45,7 @@ class CatalogosSeeder extends Seeder
         foreach ($administradoras as $nombre) {
             CatAdministradora::firstOrCreate(
                 ['nombre' => $nombre],
+                ['abreviatura' => substr($nombre, 0, 1) . rand(10, 99)],
                 ['activo' => true]
             );
         }
