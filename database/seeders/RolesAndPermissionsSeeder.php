@@ -156,6 +156,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'propiedades_ver_todos',
             'propiedades_ver_historial',
 
+            'carteras_ver',
+            'carteras_crear',
+            'carteras_editar',
+            'carteras_descargar',
+
             // ==========================================
             // 💼 MÓDULO: PROCESOS DE VENTA (SVT)
             // ==========================================
