@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Actions\Action;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -15,13 +16,12 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
@@ -70,7 +70,50 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
+            ->widgets([])
+            ->userMenuItems([
+                'profile' => Action::make('profile')
+                    ->label(
+                        function () {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->name;
+                        }
+                    )
+                    ->icon('heroicon-o-user-circle'),
+
+                // Sucursal
+                Action::make('sucursal')
+                    ->label(
+                        function () {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->sucursal->nombre ?? 'Sin sucursal';
+                        }
+                    )
+                    ->icon('heroicon-o-building-office-2')
+                    ->color('gray')
+                    ->disabled(),
+
+                Action::make('roles')
+                    ->label(
+                        function () {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            $roles = $user->roles
+                                ->pluck('name')
+                                ->map(fn($role) => str_replace('_', ' ', $role))
+                                ->join(', ');
+
+                            return $roles;
+                        }
+                    )
+                    ->icon('heroicon-o-shield-check')
+                    ->color('gray')
+                    ->disabled(),
             ])
             ->middleware([
                 EncryptCookies::class,

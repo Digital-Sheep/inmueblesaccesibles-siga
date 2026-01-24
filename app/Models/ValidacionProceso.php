@@ -15,7 +15,7 @@ class ValidacionProceso extends Model
     protected $fillable = [
         'validable_type', // Qué se valida (Pago, Dictamen, Contrato)
         'validable_id',
-        'accion_intentada', // Ej: 'SOLICITAR_APARTADO'
+        'accion_intentada',
         'rol_validador_id', // Qué rol debe aprobar (Ej. GAD)
         'usuario_validador_id', // Si es para alguien específico
         'estatus', // PENDIENTE, APROBADO, RECHAZADO

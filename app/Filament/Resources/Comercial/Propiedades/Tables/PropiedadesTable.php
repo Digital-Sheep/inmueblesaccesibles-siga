@@ -4,14 +4,12 @@ namespace App\Filament\Resources\Comercial\Propiedades\Tables;
 
 use App\Models\Propiedad;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class PropiedadesTable
@@ -95,7 +93,15 @@ class PropiedadesTable
                     ->modalWidth('4xl')
                     ->slideOver()
                     ->button()
-                    ->label('Detalles'),
+                    ->label('Detalles')
+                    ->visible(
+                        function (Propiedad $record) {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('propiedades_editar');
+                        }
+                    ),
 
                 Action::make('validar_publicacion')
                     ->label('Validar y Publicar')
@@ -105,7 +111,15 @@ class PropiedadesTable
                     ->requiresConfirmation()
                     ->modalHeading('¿Publicar propiedad?')
                     ->modalDescription('Al validar, esta propiedad pasará a DISPONIBLE y será visible para todos los asesores.')
-                    ->visible(fn(Propiedad $record) => in_array($record->estatus_comercial, ['BORRADOR', 'EN_REVISION']))
+                    ->visible(
+                        function (Propiedad $record) {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return in_array($record->estatus_comercial, ['BORRADOR', 'EN_REVISION']) &&
+                                   $user->can('propiedades_cambiar_estatus');
+                        }
+                    )
 
                     ->action(function (Propiedad $record) {
                         if ($record->precio_venta_sugerido <= 0) {
@@ -128,11 +142,6 @@ class PropiedadesTable
                             ->send();
                     }),
             ])
-            // ->toolbarActions([
-            //     BulkActionGroup::make([
-            //         DeleteBulkAction::make(),
-            //     ]),
-            // ])
             ->defaultSort('created_at', 'desc');
     }
 }

@@ -60,7 +60,8 @@ class ListProspectos extends ListRecords
 
                         $action->halt();
                     }
-                }),
+                })
+                ->visible(ProspectoResource::canCreate()),
         ];
     }
 }

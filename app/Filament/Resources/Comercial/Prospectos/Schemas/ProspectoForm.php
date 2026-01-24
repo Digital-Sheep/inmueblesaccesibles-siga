@@ -84,7 +84,7 @@ class ProspectoForm
                                         /** @var \App\Models\User $user */
                                         $user = Auth::user();
 
-                                        return ! $user->can('gestionar_toda_la_red');
+                                        return ! ($user->can('prospectos_ver_todos') && $user->can('prospectos_reasignar'));
                                     })
                                     ->dehydrated()
                                     ->native(false),
@@ -107,7 +107,7 @@ class ProspectoForm
                                         /** @var \App\Models\User $user */
                                         $user = Auth::user();
 
-                                        return ! $user->canAny(['gestionar_sucursal_propia', 'gestionar_toda_la_red']);
+                                        return !$user->can('prospectos_reasignar');
                                     })
                                     ->dehydrated()
                                     ->native(false),

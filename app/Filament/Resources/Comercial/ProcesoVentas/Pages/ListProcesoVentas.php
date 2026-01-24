@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Comercial\ProcesoVentas\Pages;
 use App\Filament\Resources\Comercial\ProcesoVentas\ProcesoVentaResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\Auth;
 
 class ListProcesoVentas extends ListRecords
 {
@@ -17,7 +18,15 @@ class ListProcesoVentas extends ListRecords
                 ->label('Nuevo proceso de venta')
                 ->modalHeading('Registrar nuevo proceso de venta')
                 ->modalWidth('lg')
-                ->createAnother(false),
+                ->createAnother(false)
+                ->visible(
+                    function (): bool {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('ventas_crear');
+                    }
+                ),
         ];
     }
 }

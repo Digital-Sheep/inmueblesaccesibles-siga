@@ -88,7 +88,7 @@ class ProspectosTable
                     ->visible(function () {
                         /** @var \App\Models\User $user */
                         $user = Auth::user();
-                        return $user->canAny(['gestionar_sucursal_propia', 'gestionar_toda_la_red']);
+                        return $user->can(['prospectos_ver_todos', 'prospectos_ver_sucursal_completa']);
                     })
                     ->native(false),
 
@@ -98,7 +98,7 @@ class ProspectosTable
                     ->visible(function () {
                         /** @var \App\Models\User $user */
                         $user = Auth::user();
-                        return $user->can('gestionar_toda_la_red');
+                        return $user->can('prospectos_ver_todos');
                     })
                     ->native(false),
             ])
@@ -186,6 +186,11 @@ class ProspectosTable
                             ->success()
                             ->title('Actividad registrada')
                             ->send();
+                    })
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+                        return $user->can('interacciones_crear');
                     }),
                 ViewAction::make()
                     ->label('Ver')
@@ -194,19 +199,29 @@ class ProspectosTable
                     ->slideOver()
                     ->modalWidth('5xl')
                     ->button()
-                    ->color('gray'),
+                    ->color('gray')
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+                        return $user->can('prospectos_ver');
+                    }),
                 EditAction::make()
                     ->label('Editar')
                     ->tooltip('Corregir datos')
                     ->color('info')
                     ->button()
-                    ->slideOver(),
+                    ->slideOver()
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+                        return $user->can('prospectos_editar');
+                    }),
                 DeleteAction::make()
                     ->button()
                     ->visible(function () {
                         /** @var \App\Models\User $user */
                         $user = Auth::user();
-                        return $user->canAny(['gestionar_sucursal_propia', 'gestionar_toda_la_red']);
+                        return $user->can('prospectos_eliminar');
                     })
                     ->hidden(fn($record) => $record->estatus === 'CLIENTE'),
             ])
@@ -216,10 +231,11 @@ class ProspectosTable
                         ->visible(function () {
                             /** @var \App\Models\User $user */
                             $user = Auth::user();
-                            return $user->canAny(['gestionar_sucursal_propia', 'gestionar_toda_la_red']);
+                            return $user->can('prospectos_eliminar');
                         }),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->striped();
     }
 }

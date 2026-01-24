@@ -32,6 +32,29 @@ class ProspectoResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'nombre_completo';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('menu_prospectos');
+    }
+
+    public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('prospectos_ver');
+    }
+
+    public static function canCreate(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('prospectos_crear');}
+
     public static function form(Schema $schema): Schema
     {
         return ProspectoForm::configure($schema);
@@ -59,15 +82,22 @@ class ProspectoResource extends Resource
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if ($user->can('gestionar_toda_la_red')) {
+        // Si tiene permiso de ver TODOS los prospectos
+        if ($user->can('prospectos_ver_todos')) {
             return $query;
         }
 
-        if ($user->can('gestionar_sucursal_propia')) {
-            return $query->where('sucursal_id', $user->sucursal_id);
+        // Filtro por sucursal
+        if ($user->sucursal_id !== null) {
+            $query->where('sucursal_id', $user->sucursal_id);
         }
 
-        return $query->where('usuario_responsable_id', $user->id);
+        // Si tiene permiso de ver la sucursal completa, no filtramos por usuario
+        if (!$user->can('prospectos_ver_sucursal_completa')) {
+            $query->where('usuario_responsable_id', $user->id);
+        }
+
+        return $query;
     }
 
     public static function getEloquentQuery(): Builder

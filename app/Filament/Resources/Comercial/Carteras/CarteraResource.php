@@ -18,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
 class CarteraResource extends Resource
@@ -35,6 +36,22 @@ class CarteraResource extends Resource
     protected static ?int $navigationSort = 7;
 
     protected static ?string $recordTitleAttribute = 'nombre';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('menu_cartera');
+    }
+
+    public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('carteras_ver');
+    }
 
     public static function form(Schema $schema): Schema
     {

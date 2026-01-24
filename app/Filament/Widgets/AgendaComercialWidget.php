@@ -54,9 +54,8 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // 1. DEFINIR SI ES SUPERVISOR/ADMIN
-        // Ajusta el nombre del rol a como lo tengas en tu BD ('Super_Admin', 'Director_Comercial', etc.)
-        $esAdmin = $user->hasRole('Super_Admin') || $user->can('ver_toda_la_agenda');
+        $verAgendaTodos = $user->can('agenda_ver_todos');
+        $verPendientesTodos = $user->can('interacciones_ver_todas');
 
         // ---------------------------------------------------------
         // A. CITAS DE AGENDA (AZULES)
@@ -65,16 +64,18 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
             ->where('fecha_inicio', '>=', $fetchInfo['start'])
             ->where('fecha_fin', '<=', $fetchInfo['end']);
 
-        // APLICAR FILTRO SOLO SI NO ES ADMIN
-        if (! $esAdmin) {
+        if (!$verAgendaTodos) {
             $queryAgendas->where('usuario_id', $user->id);
         }
 
-        $agendas = $queryAgendas->with('usuario')->get(); // Traemos 'usuario' para ver de quién es
+        if ($user->can('agenda_ver')) {
+            $agendas = $queryAgendas->with('usuario')->get();
+        } else {
+            $agendas = [];
+        }
 
         foreach ($agendas as $agenda) {
-            // Si soy admin, quiero ver de quién es la cita en el título
-            $titulo = $esAdmin
+            $titulo = $verAgendaTodos
                 ? "{$agenda->titulo} ({$agenda->usuario->name})"
                 : $agenda->titulo;
 
@@ -99,22 +100,24 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
             ->where('estatus', '!=', 'COMPLETADA')
             ->whereNotNull('fecha_programada')
             ->whereBetween('fecha_programada', [$fetchInfo['start'], $fetchInfo['end']])
-            ->with(['entidad', 'usuario']); // Cargamos usuario también
+            ->with(['entidad', 'usuario']);
 
-        // APLICAR FILTRO SOLO SI NO ES ADMIN
-        if (! $esAdmin) {
+        if (!$verPendientesTodos) {
             $queryPendientes->where('usuario_id', $user->id);
         }
 
-        $pendientes = $queryPendientes->get();
+        if ($user->can('interacciones_ver')) {
+            $pendientes = $queryPendientes->get();
+        } else {
+            $pendientes = [];
+        }
 
         foreach ($pendientes as $tarea) {
             $cliente = $tarea->entidad->nombre_completo
                 ?? $tarea->entidad->name
                 ?? 'Prospecto';
 
-            // Para el admin, mostramos quién es el responsable de la tarea
-            $responsable = $esAdmin ? " - {$tarea->usuario->name}" : "";
+            $responsable = $verPendientesTodos ? " - {$tarea->usuario->name}" : "";
 
             $eventos[] = [
                 'id'              => 'tarea_' . $tarea->id,
@@ -151,7 +154,26 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
 
                 Select::make('participante_id')
                     ->label('Prospecto / Cliente')
-                    ->options(Prospecto::all()->pluck('nombre_completo', 'id'))
+                    ->options(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        $query = Prospecto::query();
+
+                        if ($user->can('prospectos_ver_todos')) {
+                            return $query->pluck('nombre_completo', 'id');
+                        }
+
+                        if ($user->sucursal_id) {
+                            $query->where('sucursal_id', $user->sucursal_id);
+                        }
+
+                        if (!$user->can('prospectos_ver_sucursal_completa')) {
+                            $query->where('usuario_responsable_id', $user->id);
+                        }
+
+                        return $query->pluck('nombre_completo', 'id');
+                    })
                     ->searchable()
                     ->preload(),
 
@@ -173,55 +195,37 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
         ];
     }
 
+    protected function headerActions(): array
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (!$user->can('agenda_crear')) {
+            return [];
+        }
+
+        return [
+            Actions\CreateAction::make(),
+        ];
+    }
+
     /**
      * 3. MANEJAR CLIC EN EVENTO
      */
-    // public function onEventClick(array $event): void
-    // {
-    //     Notification::make()
-    //         ->title('Click Recibido')
-    //         ->body('ID Crudo: ' . ($event['id'] ?? 'Nulo'))
-    //         ->warning() // Color amarillo para distinguir
-    //         ->send();
-
-    //     $fullId = $event['id'] ?? '';
-    //     $parts  = explode('_', $fullId);
-
-    //     if (count($parts) < 2) {
-    //         Notification::make()->title('ID Inválido')->danger()->send();
-    //         return;
-    //     }
-
-    //     $tipo   = $parts[0];
-    //     $idReal = $parts[1];
-
-    //     // if ($tipo === 'agenda') {
-    //     //     Action::make('editAgenda')
-    //     //         ->action(fn() => Notification::make()->title('Cita de Agenda Seleccionada')->success()->send());
-    //     // } elseif ($tipo === 'tarea') {
-    //     //     Action::make('editTarea')
-    //     //         ->action(fn() => Notification::make()->title('Tarea Pendiente Seleccionada')->success()->send());
-    //     // } else {
-    //     //     Notification::make()->title('Tipo de Evento Desconocido')->danger()->send();
-    //     // }
-    //     if ($tipo === 'agenda') {
-    //         $this->mountAction('editAgenda', ['record' => $idReal]);
-    //     } elseif ($tipo === 'tarea') {
-    //         $this->mountAction('editTarea', ['record' => $idReal]);
-    //     }
-    // }
-
     public function onEventClick(array $event): void
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $parts = explode('_', $event['id'] ?? '');
         if (count($parts) < 2) return;
 
         $tipo = $parts[0];
         $idReal = $parts[1];
 
-        if ($tipo === 'agenda') {
+        if ($tipo === 'agenda' && $user->can('agenda_editar')) {
             $this->mountAction('editAgenda', ['record_id' => $idReal]);
-        } elseif ($tipo === 'tarea') {
+        } elseif ($tipo === 'tarea' && $user->can('interacciones_editar')) {
             $this->mountAction('editTarea', ['record_id' => $idReal]);
         }
     }
@@ -231,6 +235,9 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
      */
     public function onEventDrop(array $event, array $oldEvent, array $relatedEvents, array $delta, ?array $oldResource, ?array $newResource): bool
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $fullId = $event['id'] ?? '';
         $parts  = explode('_', $fullId);
 
@@ -243,7 +250,7 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
         $newStart = Carbon::parse($event['start'])->setTimezone(config('app.timezone'));
         $newEnd   = isset($event['end']) ? Carbon::parse($event['end'])->setTimezone(config('app.timezone')) : null;
 
-        if ($tipo === 'agenda') {
+        if ($tipo === 'agenda' && $user->can('agenda_editar')) {
             $cita = EventoAgenda::find($idReal);
             if ($cita) {
                 $cita->update([
@@ -252,7 +259,7 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
                 ]);
                 return false; // Éxito (no revertir)
             }
-        } elseif ($tipo === 'tarea') {
+        } elseif ($tipo === 'tarea' && $user->can('interacciones_editar')) {
             $tarea = Interaccion::find($idReal);
             if ($tarea) {
                 $tarea->update([
@@ -264,137 +271,6 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
 
         return true; // Revertir si no encontró registro
     }
-
-    /**
-     * 5. DEFINICIÓN DE ACCIONES (MODALES DE EDICIÓN)
-     */
-    // protected function getActions(): array
-    // {
-    //     return [
-    //         // --- MODAL A: Editar Cita de Agenda ---
-    //         Action::make('editAgenda')
-    //             ->modalWidth('lg')
-    //             ->modalHeading('Editar Cita de Agenda')
-    //             ->mountUsing(function (Form $form, array $arguments) {
-    //                 $recordId = $arguments['record'] ?? null;
-
-    //                 if ($recordId && $cita = EventoAgenda::find($recordId)) {
-    //                     $form->fill([
-    //                         'titulo' => $cita->titulo,
-    //                         'fecha_inicio' => $cita->fecha_inicio,
-    //                         'fecha_fin' => $cita->fecha_fin,
-    //                         'tipo' => $cita->tipo,
-    //                         'descripcion' => $cita->descripcion,
-    //                     ]);
-    //                 }
-    //             })
-    //             ->record(fn(array $arguments) => EventoAgenda::find($arguments['record'] ?? null))
-    //             ->schema([
-    //                 Grid::make(2)->schema([
-    //                     TextInput::make('titulo')->required()->columnSpanFull(),
-    //                     DateTimePicker::make('fecha_inicio')->required(),
-    //                     DateTimePicker::make('fecha_fin')->required(),
-    //                     Select::make('tipo')
-    //                         ->options(['CITA_VISITA' => 'Visita', 'REUNION' => 'Reunión'])
-    //                         ->required(),
-    //                     Textarea::make('descripcion')->columnSpanFull(),
-    //                 ])
-    //             ])
-    //             ->action(function (array $data, array $arguments) {
-    //                 $record = EventoAgenda::find($arguments['record']);
-
-    //                 if ($record) {
-    //                     $record->update($data);
-    //                     Notification::make()->title('Cita actualizada')->success()->send();
-    //                     $this->refreshEvents();
-    //                 }
-    //             })
-    //             ->modalFooterActions([
-    //                 DeleteAction::make('delete')
-    //                     ->requiresConfirmation()
-    //                     ->action(function (array $arguments) {
-    //                         $record = EventoAgenda::find($arguments['record']);
-    //                         if ($record) {
-    //                             $record->delete();
-    //                             Notification::make()->title('Cita eliminada')->success()->send();
-    //                         }
-    //                     })
-    //                     ->after(fn() => $this->refreshEvents())
-    //             ]),
-
-    //         // --- MODAL B: Gestionar Tarea (Interacción) ---
-    //         Action::make('editTarea')
-    //             ->modalHeading('Gestionar Tarea Pendiente')
-    //             ->color('warning')
-    //             ->mountUsing(function (Form $form, array $arguments) {
-    //                 $recordId = $arguments['record'] ?? null;
-
-    //                 if ($recordId && $tarea = Interaccion::find($recordId)) {
-    //                     $form->fill([
-    //                         'titulo' => $tarea->titulo,
-    //                         'fecha_programada' => $tarea->fecha_programada,
-    //                         'comentario' => $tarea->comentario,
-    //                         'estatus' => $tarea->estatus,
-    //                     ]);
-    //                 }
-    //             })
-    //             ->schema([
-    //                 Grid::make(1)->schema([
-    //                     TextInput::make('titulo')
-    //                         ->disabled()
-    //                         ->label('Asunto'),
-
-    //                     DateTimePicker::make('fecha_programada')
-    //                         ->label('Reprogramar Fecha')
-    //                         ->required(),
-
-    //                     Textarea::make('comentario')
-    //                         ->label('Resultados / Notas')
-    //                         ->required(),
-
-    //                     Select::make('estatus')
-    //                         ->options([
-    //                             'PENDIENTE' => 'Pendiente',
-    //                             'COMPLETADA' => 'Completada (Cerrar)',
-    //                             'CANCELADA' => 'Cancelada',
-    //                         ])
-    //                         ->default('PENDIENTE')
-    //                         ->required(),
-    //                 ])
-    //             ])
-    //             ->action(function (array $data, array $arguments) {
-    //                 $record = Interaccion::find($arguments['record']);
-    //                 if ($record) {
-    //                     $record->update($data);
-    //                     Notification::make()->title('Tarea actualizada')->success()->send();
-    //                     $this->refreshEvents();
-    //                 }
-    //             }),
-    //     ];
-    // }
-
-    // public function getActions(): array
-    // {
-    //     return [
-    //         Action::make('testAction')
-    //             ->modalHeading('¡Éxito! El modal funciona')
-    //             ->form([
-    //                 TextInput::make('mensaje')
-    //                     ->label('Mensaje del Sistema')
-    //                     ->default('Si lees esto, los modales funcionan.')
-    //                     ->disabled(),
-
-    //                 TextInput::make('id_evento')
-    //                     ->label('ID recibido del calendario')
-    //                     // Recuperamos el argumento pasado desde onEventClick
-    //                     ->default(fn(array $arguments) => $arguments['id_recibido'] ?? 'Nada'),
-    //             ])
-    //             ->action(function () {
-    //                 Notification::make()->title('Acción ejecutada')->success()->send();
-    //             })
-    //             ->cancelParentActions(), // Buena práctica para evitar conflictos
-    //     ];
-    // }
 
     public function editAgendaAction(): Action
     {
@@ -471,6 +347,14 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
                         function () {
                             return redirect(request()->header('Referer'));
                         }
+                    )
+                    ->visible(
+                        function() {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('agenda_eliminar');
+                        }
                     ),
             ]);
     }
@@ -512,6 +396,9 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
 
     public function config(): array
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         return [
             'headerToolbar' => [
                 'left' => 'prev,next today',
@@ -523,6 +410,10 @@ class AgendaComercialWidget extends FullCalendarWidget implements HasForms, HasA
             'slotMaxTime' => '21:00:00',
             'locale' => 'es',
             'allDaySlot' => false,
+            'editable' => $user->can('agenda_editar'),      // 🔑 Drag & drop
+            'selectable' => $user->can('agenda_crear'),     // 🔑 Click para crear
+            'eventStartEditable' => $user->can('agenda_editar'), // 🔑 Mover eventos
+            'eventDurationEditable' => $user->can('agenda_editar'),
         ];
     }
 

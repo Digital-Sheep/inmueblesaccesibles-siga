@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class Archivo extends Model
 {
@@ -39,5 +40,16 @@ class Archivo extends Model
     public function subidoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($archivo) {
+            if (!$archivo->subido_por_id) {
+                $archivo->subido_por_id = Auth::id();
+            }
+        });
     }
 }

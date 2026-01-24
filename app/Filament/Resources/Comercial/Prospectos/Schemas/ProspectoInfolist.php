@@ -7,7 +7,6 @@ use App\Models\ProcesoVenta;
 use App\Models\Propiedad;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -17,7 +16,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\TextSize;
-use Filament\Infolists\Components\Split;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Actions;
 use Filament\Support\Enums\IconPosition;
@@ -34,9 +32,8 @@ class ProspectoInfolist
                         ->label('Iniciar nuevo proceso de venta')
                         ->icon('heroicon-m-currency-dollar')
                         ->color('success')
-                        ->button() // Para que parezca botón y no solo link
+                        ->button()
 
-                        // --- AQUÍ VA LA MISMA LÓGICA DEL FORMULARIO ---
                         ->schema([
                             Select::make('propiedad_id')
                                 ->label('Propiedad')
@@ -65,6 +62,10 @@ class ProspectoInfolist
                             // Actualizar Prospecto
                             $record->update(['estatus' => 'APARTADO']);
 
+                            Propiedad::find($data['propiedad_id'])->update([
+                                'estatus_comercial' => 'EN_PROCESO',
+                            ]);
+
                             Notification::make()->title('proceso iniciado correctamente')->success()->send();
 
                             return redirect()->to(
@@ -74,7 +75,7 @@ class ProspectoInfolist
                         ->visible(function ($record) {
                             /** @var \App\Models\User $user */
                             $user = Auth::user();
-                            return $record->estatus !== 'CLIENTE' && $user->can('solicitar_apartado');
+                            return $record->estatus !== 'CLIENTE' && $user->can('ventas_crear');
                         }),
                 ])
                     ->alignRight(),
@@ -197,7 +198,15 @@ class ProspectoInfolist
                                 Section::make('Próximas Acciones')
                                     ->icon('heroicon-m-bell-alert')
                                     ->headerActions([
-                                        // Opcional: Podrías poner un botón aquí para agregar tarea nueva
+                                        Action::make('ver_agenda_completa')
+                                            ->label('Ver agenda completa')
+                                            ->icon('heroicon-m-calendar-days')
+                                            ->url(fn($record) => route('filament.resources.comercial.interacciones.index', [
+                                                'tableFilters' => [
+                                                    'prospecto' => ['value' => $record->id],
+                                                ],
+                                            ]))
+                                            ->openUrlInNewTab()
                                     ])
                                     ->schema([
                                         RepeatableEntry::make('interaccionesPendientes') // <--- USA LA NUEVA RELACIÓN
@@ -303,7 +312,15 @@ class ProspectoInfolist
                                                     ])
                                             ]),
                                     ])
-                                    ->compact(),
+                                    ->compact()
+                                    ->visible(
+                                        function (): bool {
+                                            /** @var \App\Models\User  $user */
+                                            $user = Auth::user();
+
+                                            return $user->can('interacciones_ver');
+                                        }
+                                    ),
                             ]),
                     ])
             ]);

@@ -16,21 +16,15 @@ class ListPropiedades extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Agregar propiedad'),
+                ->label('Agregar propiedad')
+                ->visible(
+                    function(): bool {
+                        /** @var \App\Models\User  $user */
+                        $user = Auth::user();
+
+                        return $user->can('propiedades_crear');
+                    }
+                ),
         ];
-    }
-
-    protected function getTableQuery(): ?Builder
-    {
-        $query = parent::getTableQuery();
-
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        if ($user->sucursal_id && ! $user->hasRole('Super Admin')) {
-            $query->where('sucursal_id', $user->sucursal_id);
-        }
-
-        return $query;
     }
 }

@@ -23,7 +23,7 @@ use Filament\Tables\Table;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
+use Illuminate\Support\Facades\Auth;
 
 class PropiedadResource extends Resource
 {
@@ -39,6 +39,22 @@ class PropiedadResource extends Resource
     protected static ?int $navigationSort = 6;
 
     protected static ?string $recordTitleAttribute = 'numero_credito';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('menu_propiedades');
+    }
+
+    public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('propiedades_ver');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -75,5 +91,29 @@ class PropiedadResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    private static function aplicarFiltrosDeSeguridad(Builder $query): Builder
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (!$user->can('propiedades_ver_todos')) {
+            $query->where('estatus_comercial', '!=', 'BORRADOR');
+        }
+
+        return $query;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        return self::aplicarFiltrosDeSeguridad($query);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        $query = parent::getGlobalSearchEloquentQuery();
+        return self::aplicarFiltrosDeSeguridad($query);
     }
 }

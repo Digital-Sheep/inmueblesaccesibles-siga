@@ -28,7 +28,7 @@ class UserResource extends Resource
     protected static ?string $pluralModelLabel = 'Usuarios';
     protected static ?string $navigationLabel = 'Usuarios';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
     protected static ?string $cluster = ConfiguracionCluster::class;
 

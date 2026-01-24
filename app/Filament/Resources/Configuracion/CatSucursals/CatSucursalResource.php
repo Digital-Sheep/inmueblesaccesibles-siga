@@ -26,7 +26,7 @@ class CatSucursalResource extends Resource
     protected static ?string $modelLabel = 'Sucursal';
     protected static ?string $pluralModelLabel = 'Sucursales';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
 
     protected static ?string $cluster = ConfiguracionCluster::class;
 

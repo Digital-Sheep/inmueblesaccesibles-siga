@@ -18,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
 class EventoAgendaResource extends Resource
@@ -36,6 +37,22 @@ class EventoAgendaResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'titulo';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('menu_agenda');
+    }
+
+    public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('agenda_ver');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return EventoAgendaForm::configure($schema);
@@ -45,11 +62,6 @@ class EventoAgendaResource extends Resource
     {
         return EventoAgendaInfolist::configure($schema);
     }
-
-    // public static function table(Table $table): Table
-    // {
-    //     return EventoAgendasTable::configure($table);
-    // }
 
     public static function getRelations(): array
     {

@@ -83,7 +83,7 @@ class UsuariosPruebaSeeder extends Seeder
         $this->crearUsuario('Lic. Resolución', 'urrj.resolucion@inmuebles.com', 'URRJ_Resolucion', 'GDL');
 
         // Abogado Litigante (Juzgados)
-        $this->crearUsuario('Abogado Litigante', 'abogado.litigio@inmuebles.com', 'Abogado_Litigante', 'GDL');
+        // $this->crearUsuario('Abogado Litigante', 'abogado.litigio@inmuebles.com', 'Abogado_Litigante', 'GDL');
 
 
         // ----------------------------------------------------------------

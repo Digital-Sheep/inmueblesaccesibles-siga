@@ -5,10 +5,21 @@ namespace App\Filament\Clusters\Configuracion;
 use BackedEnum;
 use Filament\Clusters\Cluster;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
 
 class ConfiguracionCluster extends Cluster
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static ?int $navigationSort = 4;
+    protected static ?string $navigationLabel = 'Configuración';
+
+    protected static ?int $navigationSort = 99;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('menu_configuracion');
+    }
 }
