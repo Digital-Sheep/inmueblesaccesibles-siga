@@ -10,6 +10,7 @@ use Filament\Forms\Components\MorphToSelect;
 use Filament\Forms\Components\MorphToSelect\Type;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,7 +31,7 @@ class InteraccionForm
                                 Type::make(Prospecto::class)
                                     ->label('Prospecto')
                                     ->titleAttribute('nombre_completo')
-                                    ->modifyOptionsQueryUsing(fn (Builder $query) => $query->soloProspectos()),
+                                    ->modifyOptionsQueryUsing(fn(Builder $query) => $query->soloProspectos()),
 
                                 Type::make(Cliente::class)
                                     ->label('Cliente')
@@ -63,6 +64,13 @@ class InteraccionForm
                             ->default(fn() => request()->query('tipo_interaccion', 'LLAMADA')) // Default desde URL o Llamada
                             ->required(),
 
+                        Toggle::make('es_registro_completado')
+                            ->label('¿Es un registro de actividad ya realizada?')
+                            ->default(true)
+                            ->live()  // Importante para reactividad
+                            ->helperText('Activa si ya realizaste la actividad. Desactiva si la vas a agendar para después.')
+                            ->columnSpanFull(),
+
                         // 4. Resultado (Si ya ocurrió)
                         Select::make('resultado')
                             ->options([
@@ -71,18 +79,23 @@ class InteraccionForm
                                 'CITA_AGENDADA' => '📅 Cita Agendada',
                                 'NO_INTERESA' => '❌ No Interesa',
                                 'SIN_RESPUESTA' => '🔕 Sin Respuesta',
-                            ]),
+                            ])
+                            ->visible(fn($get) => $get('es_registro_completado') === true)
+                            ->required(fn($get) => $get('es_registro_completado') === true),
 
                         // 5. Fechas
-                        DateTimePicker::make('fecha_programada')
-                            ->label('Agendar para')
-                            ->minDate(now())
-                            ->default(null),
-
                         DateTimePicker::make('fecha_realizada')
                             ->label('Fecha Realización')
                             ->default(now())
-                            ->required(),
+                            ->maxDate(now())
+                            ->visible(fn($get) => $get('es_registro_completado') === true)
+                            ->required(fn($get) => $get('es_registro_completado') === true),
+
+                        DateTimePicker::make('fecha_programada')
+                            ->label('¿Para cuándo la agendas?')
+                            ->minDate(now())
+                            ->visible(fn($get) => $get('es_registro_completado') === false)
+                            ->required(fn($get) => $get('es_registro_completado') === false),
 
                         // 6. Comentarios
                         Textarea::make('comentario')
@@ -107,6 +120,9 @@ class InteraccionForm
                                 }
                                 return null;
                             }),
+
+                        Hidden::make('estatus')
+                            ->default(fn($get) => $get('es_registro_completado') === true ? 'COMPLETADA' : 'PENDIENTE'),
                     ])->columns(2),
             ]);
     }

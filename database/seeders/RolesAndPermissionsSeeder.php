@@ -642,7 +642,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'agenda_crear',
             'agenda_editar',
             'agenda_eliminar',
-            'agenda_ver_todos',               // 🔑 VE AGENDA DE TODA LA RED
+            'agenda_ver_todos',
             'agenda_asignar_participantes',
 
             // 💬 INTERACCIONES

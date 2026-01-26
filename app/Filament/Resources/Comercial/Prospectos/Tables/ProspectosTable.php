@@ -17,6 +17,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\View;
 use Illuminate\Support\Facades\Auth;
@@ -132,6 +133,12 @@ class ProspectosTable
                                 ->required()
                                 ->native(false),
 
+                            Toggle::make('es_registro_completado')
+                                ->label('¿Ya se realizó la actividad?')
+                                ->default(true)
+                                ->live()
+                                ->columnSpanFull(),
+
                             Select::make('resultado')
                                 ->options([
                                     'CONTACTADO' => '✅ Contactado',
@@ -141,7 +148,8 @@ class ProspectosTable
                                     'NO_INTERESA' => '❌ No interesa',
                                     'DATOS_INCORRECTOS' => '🚫 Datos incorrectos',
                                 ])
-                                ->required()
+                                ->visible(fn($get) => $get('es_registro_completado') === true)
+                                ->required(fn($get) => $get('es_registro_completado') === true)
                                 ->native(false),
                         ]),
 

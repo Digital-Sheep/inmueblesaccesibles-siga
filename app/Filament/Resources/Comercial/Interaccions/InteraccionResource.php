@@ -86,38 +86,48 @@ class InteraccionResource extends Resource
             ]);
     }
 
-    // private static function aplicarFiltrosDeSeguridad(Builder $query): Builder
-    // {
-    //     /** @var \App\Models\User $user */
-    //     $user = Auth::user();
+    private static function aplicarFiltrosDeSeguridad(Builder $query): Builder
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
-    //     // Si tiene permiso de ver TODOS los prospectos
-    //     if ($user->can('interacciones_ver_todas')) {
-    //         return $query;
-    //     }
+        // Si tiene permiso de ver TODOS los prospectos
+        if ($user->can('interacciones_ver_todas')) {
+            return $query;
+        }
 
-    //     // Filtro por sucursal
-    //     if ($user->sucursal_id !== null) {
-    //         $query->where('sucursal_id', $user->sucursal_id);
-    //     }
+        if ($user->sucursal_id !== null && !$user->can('interacciones_ver_todas')) {
+            $query->where(function ($q) use ($user) {
+                // Filtrar interacciones de prospectos de la sucursal
+                $q->where(function ($subQ) use ($user) {
+                    $subQ->where('entidad_type', 'App\Models\Prospecto')
+                        ->whereHas('entidad', fn($entQ) => $entQ->where('sucursal_id', $user->sucursal_id));
+                })
+                    // O filtrar interacciones de clientes de la sucursal
+                    ->orWhere(function ($subQ) use ($user) {
+                        $subQ->where('entidad_type', 'App\Models\Cliente')
+                            ->whereHas('entidad', fn($entQ) => $entQ->where('sucursal_id', $user->sucursal_id));
+                    });
+            });
+        }
 
-    //     // Si tiene permiso de ver la sucursal completa, no filtramos por usuario
-    //     if (!$user->can('prospectos_ver_sucursal_completa')) {
-    //         $query->where('usuario_responsable_id', $user->id);
-    //     }
+        // Si tiene permiso de ver la sucursal completa, no filtramos por usuario
+        if (!$user->can('prospectos_ver_sucursal_completa')) {
+            $query->where('usuario_id', $user->id);
+        }
 
-    //     return $query;
-    // }
+        return $query;
+    }
 
-    // public static function getEloquentQuery(): Builder
-    // {
-    //     $query = parent::getEloquentQuery();
-    //     return self::aplicarFiltrosDeSeguridad($query);
-    // }
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        return self::aplicarFiltrosDeSeguridad($query);
+    }
 
-    // public static function getGlobalSearchEloquentQuery(): Builder
-    // {
-    //     $query = parent::getGlobalSearchEloquentQuery();
-    //     return self::aplicarFiltrosDeSeguridad($query);
-    // }
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        $query = parent::getGlobalSearchEloquentQuery();
+        return self::aplicarFiltrosDeSeguridad($query);
+    }
 }

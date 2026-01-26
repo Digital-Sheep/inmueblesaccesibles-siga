@@ -112,6 +112,8 @@ class CarterasTable
                                 $row = array_pad($row, 17, '');
 
                                 // Limpieza de datos numéricos (quitar $ y ,)
+                                $numeroCredito = trim($row[1]);
+
                                 $avaluo = preg_replace('/[^0-9.]/', '', $row[14]);
                                 $precio = preg_replace('/[^0-9.]/', '', $row[15]);
                                 $cofinavit = preg_replace('/[^0-9.]/', '', $row[16]);
@@ -132,6 +134,14 @@ class CarterasTable
                                     } catch (\Exception $e) {
                                         $fechaJudicial = null;
                                     }
+                                }
+
+                                $existe = Propiedad::where('numero_credito', $numeroCredito)
+                                    ->where('direccion_completa', 'LIKE', '%' . trim($row[5]) . '%')
+                                    ->exists();
+
+                                if ($existe) {
+                                    continue;
                                 }
 
                                 Propiedad::create([

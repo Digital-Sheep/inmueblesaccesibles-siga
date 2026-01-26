@@ -30,9 +30,9 @@ class MisProspectosPendientesWidget extends BaseWidget
             $user->hasAnyRole(['SVT_Gerente_Regional', 'GRS_Nacional']);
 
         $query = Interaccion::query()
-            ->where('tipo', 'SEGUIMIENTO')
+            // ->where('tipo', 'SEGUIMIENTO')
             ->where('estatus', 'PENDIENTE')
-            ->whereDate('fecha_programada', '<=', now()->addDays(3))
+            // ->whereDate('fecha_programada', '<=', now()->addDays(3))
             ->where('entidad_type', 'App\\Models\\Prospecto'); // Solo prospectos
 
         if ($puedeVerSucursal) {

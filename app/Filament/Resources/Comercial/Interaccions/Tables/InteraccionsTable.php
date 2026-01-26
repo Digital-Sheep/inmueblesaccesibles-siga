@@ -12,6 +12,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class InteraccionsTable
 {
@@ -90,8 +91,24 @@ class InteraccionsTable
                     ->modalHeading('Datos de la interacción')
                     ->modalWidth('2xl')
                     ->slideOver()
-                    ->button(),
-                DeleteAction::make(),
+                    ->button()
+                    ->visible(
+                        function ($record) {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('interacciones_editar');
+                        }
+                    ),
+                DeleteAction::make()
+                    ->visible(
+                        function ($record) {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('interacciones_eliminar');
+                        }
+                    ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
