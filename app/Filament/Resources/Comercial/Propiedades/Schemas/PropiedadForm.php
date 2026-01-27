@@ -143,8 +143,9 @@ class PropiedadForm
                                                 'ADJUDICADA' => 'Adjudicada',
                                                 'ESCRITURADA' => 'Escriturada',
                                             ])
+                                            ->default('SIN_REVISAR')
                                             ->disabled()
-                                            ->dehydrated()
+                                            ->dehydrated(true)
                                             ->native(false),
                                     ])->columns(2),
                             ]),
