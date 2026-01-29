@@ -19,6 +19,7 @@ class ListCarteras extends ListRecords
                 ->modalHeading('Carga de nueva cartera')
                 ->modalWidth('xl')
                 ->createAnother(false),
+            CarteraResource::getPlantillaCSVAction(),
         ];
     }
 }

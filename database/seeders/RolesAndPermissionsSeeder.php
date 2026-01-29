@@ -155,6 +155,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'propiedades_subir_fotos',
             'propiedades_ver_todos',
             'propiedades_ver_historial',
+            'propiedades_ver_datos_sensibles',
 
             'carteras_ver',
             'carteras_crear',

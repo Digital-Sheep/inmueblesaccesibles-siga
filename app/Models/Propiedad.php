@@ -55,6 +55,7 @@ class Propiedad extends Model
         'fecha_corte_judicial',
         'avaluo_banco',
         'cofinavit_monto',
+        'nombre_acreditado',
 
         // Precios
         'precio_lista',

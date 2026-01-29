@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\Console\Input\Input;
 
 class PropiedadForm
 {
@@ -76,10 +77,11 @@ class PropiedadForm
                                         TextInput::make('calle')
                                             ->columnSpan(3),
 
-                                        TextInput::make('colonia')
-                                            ->columnSpan(2),
+                                        TextInput::make('colonia'),
 
                                         TextInput::make('numero_exterior'),
+
+                                        TextInput::make('numero_interior'),
                                     ]),
 
                                 TextInput::make('google_maps_link')
@@ -147,6 +149,18 @@ class PropiedadForm
                                             ->disabled()
                                             ->dehydrated(true)
                                             ->native(false),
+
+                                        TextInput::make('nombre_acreditado')
+                                            ->label('Nombre del Acreditado / Deudor')
+                                            ->maxLength(255)
+                                            ->visible(
+                                                function () {
+                                                    /** @var \App\Models\User $user */
+                                                    $user = Auth::user();
+
+                                                    return $user && $user->can('propiedades_ver_datos_sensibles');
+                                                }
+                                            ),
                                     ])->columns(2),
                             ]),
 
@@ -171,6 +185,7 @@ class PropiedadForm
                                     ]),
                             ]),
 
+                        // --- PESTAÑA 4: GALERÍA Y ARCHIVOS ---
                         Tab::make('Galería y archivos')
                             ->icon('heroicon-o-photo')
                             ->schema([

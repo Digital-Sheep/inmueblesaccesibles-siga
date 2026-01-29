@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Comercial\Propiedades\Tables;
 
 use App\Models\Propiedad;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
@@ -141,6 +142,22 @@ class PropiedadesTable
                             ->body("La propiedad {$record->numero_credito} ya está disponible para venta.")
                             ->send();
                     }),
+
+                DeleteAction::make()
+                    ->label('Eliminar')
+                    ->button()
+                    ->modalHeading('¿Eliminar propiedad?')
+                    ->modalDescription('Esta acción es irreversible. La propiedad será eliminada permanentemente.')
+                    ->requiresConfirmation()
+                    ->color('danger')
+                    ->visible(
+                        function (Propiedad $record) {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('propiedades_eliminar') && $record->estatus_comercial === 'BORRADOR';
+                        }
+                    ),
             ])
             ->defaultSort('created_at', 'desc');
     }

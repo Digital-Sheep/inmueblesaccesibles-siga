@@ -2,23 +2,20 @@
 
 namespace App\Filament\Resources\Comercial\Carteras\Tables;
 
+use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use App\Models\Cartera;
-use App\Models\CatEstado;
-use App\Models\CatMunicipio;
-use App\Models\Propiedad;
 use App\Models\User;
+use App\Services\ImportadorCarteras;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CarterasTable
 {
@@ -78,157 +75,66 @@ class CarterasTable
                     ->modalDescription('El sistema leerá el archivo CSV y creará las propiedades en la base de datos vinculadas a esta cartera y sucursal.')
                     ->visible(fn(Cartera $record) => $record->estatus === 'BORRADOR' && $record->archivo_path)
                     ->action(function (Cartera $record) {
-                        // 1. Verificar archivo
-                        if (!Storage::exists($record->archivo_path)) {
-                            Notification::make()->danger()->title('Archivo no encontrado')->send();
-                            return;
-                        }
-
-                        $path = Storage::path($record->archivo_path);
-                        $file = fopen($path, 'r');
-
-                        $header = fgetcsv($file);
-
-                        $contador = 0;
-                        $errores = 0;
-
-                        DB::beginTransaction();
 
                         try {
-                            while (($row = fgetcsv($file)) !== false) {
-                                // 0: Codigo cartera, 1: Crédito, 2: Estado, 3: Municipio, 4: Fraccionamiento
-                                // 5: Dirección, 6: Segunda dir, 7: CP, 8: Etapa Jud, 9: 2da Etapa, 10: Fecha
-                                // 11: Tipo Viv, 12: M2 Const, 13: Tipo Inm, 14: Avalúo, 15: Precio Lista, 16: Cofinavit
-
-                                // Convertir cada celda a UTF-8 real. Excel suele guardar en Windows-1252 o ISO-8859-1.
-                                $row = array_map(function ($text) {
-                                    return mb_convert_encoding($text, 'UTF-8', mb_detect_encoding($text, 'UTF-8, ISO-8859-1, Windows-1252', true) ?: 'Windows-1252');
-                                }, $row);
-
-                                if (count($row) < 2) {
-                                    continue;
-                                }
-
-                                $row = array_pad($row, 17, '');
-
-                                // Limpieza de datos numéricos (quitar $ y ,)
-                                $numeroCredito = trim($row[1]);
-
-                                $avaluo = preg_replace('/[^0-9.]/', '', $row[14]);
-                                $precio = preg_replace('/[^0-9.]/', '', $row[15]);
-                                $cofinavit = preg_replace('/[^0-9.]/', '', $row[16]);
-
-                                // Búsqueda inteligente de catálogos (Estado/Municipio)
-                                $estadoNombre = trim($row[2]);
-                                $municipioNombre = trim($row[3]);
-
-                                // Encontrar el ID, si no, se queda nulo y se guarda el texto en "borrador"
-                                $estado = CatEstado::where('nombre', 'LIKE', "%{$estadoNombre}%")->first();
-                                $municipio = CatMunicipio::where('nombre', 'LIKE', "%{$municipioNombre}%")->first();
-
-                                $fechaJudicial = null;
-
-                                if (!empty($row[10])) {
-                                    try {
-                                        $fechaJudicial = \Carbon\Carbon::createFromFormat('d/m/Y', str_replace('-', '/', trim($row[10])))->format('Y-m-d');
-                                    } catch (\Exception $e) {
-                                        $fechaJudicial = null;
-                                    }
-                                }
-
-                                $existe = Propiedad::where('numero_credito', $numeroCredito)
-                                    ->where('direccion_completa', 'LIKE', '%' . trim($row[5]) . '%')
-                                    ->exists();
-
-                                if ($existe) {
-                                    continue;
-                                }
-
-                                Propiedad::create([
-                                    'cartera_id' => $record->id,
-                                    'administradora_id' => $record->administradora_id,
-                                    'sucursal_id' => $record->sucursal_id,
-
-                                    'numero_credito' => trim($row[1]),
-
-                                    // Ubicación
-                                    'estado_id' => $estado?->id,
-                                    'municipio_id' => $municipio?->id,
-                                    'estado_borrador' => $estadoNombre,
-                                    'municipio_borrador' => $municipioNombre,
-
-                                    'fraccionamiento' => trim($row[4]),
-                                    'direccion_completa' => trim($row[5]) . ' ' . trim($row[6]),
-                                    'calle' => trim($row[5]),
-                                    'codigo_postal' => trim($row[7]),
-
-                                    // Datos Legales
-                                    'etapa_judicial_reportada' => trim($row[8]) . ' - ' . trim($row[9]),
-                                    'fecha_corte_judicial' => !empty($row[10]) ? date('Y-m-d', strtotime(str_replace('/', '-', $row[10]))) : null,
-
-                                    // Características
-                                    'tipo_vivienda' => trim($row[11]),
-                                    'construccion_m2' => (float) $row[12],
-                                    'tipo_inmueble' => trim($row[13]),
-
-                                    // Valores
-                                    'avaluo_banco' => is_numeric($avaluo) ? (float) $avaluo : 0,
-                                    'precio_lista' => is_numeric($precio) ? (float) $precio : 0,
-                                    'cofinavit_monto' => is_numeric($cofinavit) ? (float) $cofinavit : 0,
-
-                                    'estatus_comercial' => 'BORRADOR',
-                                    'created_by' => Auth::id(),
-                                ]);
-
-                                $contador++;
-                            }
-
-                            $record->update(['estatus' => 'PROCESADA']);
-
-                            DB::commit();
-
-                            if (is_resource($file)) {
-                                fclose($file);
-                            }
+                            $importador = new ImportadorCarteras();
+                            $resultado = $importador->importar($record);
 
                             Notification::make()
                                 ->success()
                                 ->title('Procesamiento Exitoso')
-                                ->body("Se importaron {$contador} propiedades correctamente.")
+                                ->body("✅ Importadas: {$resultado['procesados']}\n⏭️ Duplicadas: {$resultado['duplicados']}")
                                 ->send();
 
                             $supervisores = User::where('sucursal_id', $record->sucursal_id)->role(['Direccion_Legal', 'Direccion_Comercial'])->get();
 
-                            if ($supervisores->isNotEmpty()) {
-                                Notification::make()
-                                    ->title('📢 Nueva cartera por validar')
-                                    ->body("Se han cargado {$contador} propiedades nuevas para tu sucursal en la cartera {$record->nombre}.\n\nPor favor, revisa los borradores y valídalos para venta.")
-                                    ->warning()
-                                    ->actions([
-                                        Action::make('revisar')
-                                            ->label('Ir a Borradores')
-                                            ->button()
-                                            ->url(route('filament.admin.resources.comercial.propiedades.index', [
-                                                'tableFilters[estatus_comercial][value]' => 'BORRADOR'
-                                            ]), shouldOpenInNewTab: true),
-                                    ])
-                                    ->sendToDatabase($supervisores);
-                            }
+                            Notification::make()
+                                ->title('📢 Nueva cartera por validar')
+                                ->body("Se han cargado  {$resultado['procesados']} propiedades nuevas para tu sucursal en la cartera {$record->nombre}.\n\nPor favor, revisa los borradores y valídalos para venta.")
+                                ->warning()
+                                ->actions([
+                                    Action::make('revisar')
+                                        ->label('Ir a borradores')
+                                        ->button()
+                                        ->url(
+                                            PropiedadResource::getUrl('index', [
+                                                'tableFilters' => [
+                                                    'estatus_comercial' => [
+                                                        'value' => 'BORRADOR'
+                                                    ]
+                                                ]
+                                            ]),
+                                            shouldOpenInNewTab: true
+                                        ),
+                                ])
+                                ->sendToDatabase($supervisores);
                         } catch (\Exception $e) {
-                            DB::rollBack();
-
-                            if (is_resource($file)) {
-                                fclose($file);
-                            }
-
                             Notification::make()
                                 ->danger()
                                 ->title('Error en la Importación')
-                                ->body("Error técnico: " . $e->getMessage())
+                                ->body($e->getMessage())
                                 ->persistent()
                                 ->send();
                         }
                     }),
+
+                DeleteAction::make()
+                    ->label('Eliminar')
+                    ->button()
+                    ->requiresConfirmation()
+                    ->modalHeading('¿Eliminar cartera?')
+                    ->modalDescription('Esta acción es irreversible.')
+                    ->action(function (Cartera $record) {
+                        $record->delete();
+                    })
+                    ->visible(
+                        function (Cartera $record) {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('carteras_eliminar') && $record->estatus === 'BORRADOR';
+                        }
+                    ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

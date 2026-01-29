@@ -12,6 +12,7 @@ use App\Filament\Resources\Comercial\Carteras\Schemas\CarteraInfolist;
 use App\Filament\Resources\Comercial\Carteras\Tables\CarterasTable;
 use App\Models\Cartera;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -88,5 +89,84 @@ class CarteraResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getPlantillaCSVAction(): Action
+    {
+        return Action::make('descargar_plantilla')
+            ->label('Descargar Plantilla CSV')
+            ->icon('heroicon-o-arrow-down-tray')
+            ->color('info')
+            ->outlined()
+            ->action(function () {
+                $csv = [
+                    [
+                        'Codigo de la cartera',
+                        'Número de crédito',
+                        'Estado',
+                        'Municipio',
+                        'Fraccionamiento',
+                        'Calle',
+                        'Segunda dirección',
+                        'Número exterior',
+                        'Número interior',
+                        'Código postal',
+                        'Etapa judicial',
+                        'Segunda etapa judicial',
+                        'Fecha última etapa judicial',
+                        'Tipo vivienda',
+                        'M2 construcción',
+                        'Tipo inmueble',
+                        'Avalúo según administradora',
+                        'Precio de lista',
+                        'COFINAVIT',
+                        'Nombre acreditado',
+                    ],
+                    [
+                        'CARTERA-2025-01',
+                        '123456789',
+                        'Nuevo León',
+                        'Monterrey',
+                        'Lomas del Valle',
+                        'Av. Principal',
+                        'Col. Centro',
+                        '123',
+                        'A',
+                        '64000',
+                        'Sentencia Firme',
+                        'Adjudicado',
+                        '31/12/2024',
+                        'Casa',
+                        '120.5',
+                        'Residencial',
+                        '1500000',
+                        '1200000',
+                        '0',
+                        'Juan Pérez García',
+                    ],
+                ];
+
+                $filename = 'plantilla_propiedades_' . now()->format('Ymd_His') . '.csv';
+                $handle = fopen('php://temp', 'r+');
+
+                fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+                foreach ($csv as $row) {
+                    fputcsv($handle, $row);
+                }
+
+                rewind($handle);
+                $content = stream_get_contents($handle);
+                fclose($handle);
+
+                return response()->streamDownload(
+                    fn() => print($content),
+                    $filename,
+                    [
+                        'Content-Type' => 'text/csv; charset=UTF-8',
+                        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    ]
+                );
+            });
     }
 }
