@@ -18,6 +18,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\Console\Input\Input;
 
@@ -100,18 +101,10 @@ class PropiedadForm
                                         TextInput::make('precio_lista')
                                             ->label('Precio Lista (Banco)')
                                             ->prefix('$')
-                                            ->numeric(),
-
-                                        TextInput::make('precio_venta_sugerido')
-                                            ->label('Precio Venta Sugerido')
-                                            ->prefix('$')
                                             ->numeric()
-                                            ->required(),
-
-                                        TextInput::make('precio_minimo')
-                                            ->label('Precio Mínimo')
-                                            ->prefix('$')
-                                            ->numeric(),
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters(',')
+                                            ->placeholder('0.00'),
                                     ]),
 
                                 Section::make('Estatus de control')

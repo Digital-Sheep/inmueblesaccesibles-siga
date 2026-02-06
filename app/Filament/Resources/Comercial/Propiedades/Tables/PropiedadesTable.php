@@ -2,10 +2,14 @@
 
 namespace App\Filament\Resources\Comercial\Propiedades\Tables;
 
+use App\Filament\Actions\CalcularCotizacionAction;
+use App\Filament\Actions\ValidarYPublicarPropiedadAction;
 use App\Models\Propiedad;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -87,77 +91,59 @@ class PropiedadesTable
                     ->label('Sucursal')
                     ->native(false),
             ])
-            ->recordAction(EditAction::class)
+            ->recordUrl(null)
+
+            ->recordAction(ViewAction::class)
             ->recordActions([
-                EditAction::make()
-                    ->modalHeading('Datos de la propiedad')
+                ViewAction::make()
+                    ->modalHeading('Detalles de la propiedad')
                     ->modalWidth('4xl')
                     ->slideOver()
+                    ->label('Ver Detalles')
+                    ->icon('heroicon-o-eye')
                     ->button()
-                    ->label('Detalles')
-                    ->visible(
-                        function (Propiedad $record) {
-                            /** @var \App\Models\User $user */
-                            $user = Auth::user();
+                    ->color('info'),
 
-                            return $user->can('propiedades_editar');
-                        }
-                    ),
+                ActionGroup::make([
 
-                Action::make('validar_publicacion')
-                    ->label('Validar y Publicar')
-                    ->icon('heroicon-o-check-badge')
-                    ->button()
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('¿Publicar propiedad?')
-                    ->modalDescription('Al validar, esta propiedad pasará a DISPONIBLE y será visible para todos los asesores.')
-                    ->visible(
-                        function (Propiedad $record) {
-                            /** @var \App\Models\User $user */
-                            $user = Auth::user();
+                    EditAction::make()
+                        ->modalHeading('Datos de la propiedad')
+                        ->modalWidth('4xl')
+                        ->slideOver()
+                        ->label('Editar')
+                        ->visible(
+                            function (Propiedad $record) {
+                                /** @var \App\Models\User $user */
+                                $user = Auth::user();
 
-                            return in_array($record->estatus_comercial, ['BORRADOR', 'EN_REVISION']) &&
-                                   $user->can('propiedades_cambiar_estatus');
-                        }
-                    )
+                                return $user->can('propiedades_editar');
+                            }
+                        ),
 
-                    ->action(function (Propiedad $record) {
-                        if ($record->precio_venta_sugerido <= 0) {
-                            Notification::make()
-                                ->danger()
-                                ->title('Datos Incompletos')
-                                ->body('No puedes publicar una propiedad sin precio de venta. Edítala primero.')
-                                ->send();
-                            return;
-                        }
+                    CalcularCotizacionAction::make(),
 
-                        $record->update([
-                            'estatus_comercial' => 'DISPONIBLE',
-                        ]);
+                    ValidarYPublicarPropiedadAction::make(),
 
-                        Notification::make()
-                            ->success()
-                            ->title('Propiedad Publicada')
-                            ->body("La propiedad {$record->numero_credito} ya está disponible para venta.")
-                            ->send();
-                    }),
+                    DeleteAction::make()
+                        ->label('Eliminar')
+                        ->modalHeading('¿Eliminar propiedad?')
+                        ->modalDescription('Esta acción es irreversible. La propiedad será eliminada permanentemente.')
+                        ->requiresConfirmation()
+                        ->color('danger')
+                        ->visible(
+                            function (Propiedad $record) {
+                                /** @var \App\Models\User $user */
+                                $user = Auth::user();
 
-                DeleteAction::make()
-                    ->label('Eliminar')
-                    ->button()
-                    ->modalHeading('¿Eliminar propiedad?')
-                    ->modalDescription('Esta acción es irreversible. La propiedad será eliminada permanentemente.')
-                    ->requiresConfirmation()
-                    ->color('danger')
-                    ->visible(
-                        function (Propiedad $record) {
-                            /** @var \App\Models\User $user */
-                            $user = Auth::user();
-
-                            return $user->can('propiedades_eliminar') && $record->estatus_comercial === 'BORRADOR';
-                        }
-                    ),
+                                return $user->can('propiedades_eliminar') && $record->estatus_comercial === 'BORRADOR';
+                            }
+                        ),
+                ])
+                    ->label('Acciones')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->size('sm')
+                    ->color('gray')
+                    ->button(),
             ])
             ->defaultSort('created_at', 'desc');
     }

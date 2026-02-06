@@ -258,6 +258,44 @@ class RolInfolist
                             ->collapsed()
                             ->visible(fn($record) => !empty(self::getPermisosPorCategoria($record, 'carteras'))),
 
+                        // 💲 PRECIOS
+                        Section::make('Gestión de Precios')
+                            ->schema([
+                                Grid::make(3)
+                                    ->schema([
+                                        TextEntry::make('permissions_precios')
+                                            ->label('Permisos de Gestión de Precios')
+                                            ->getStateUsing(fn($record) => self::getPermisosPorCategoria($record, 'precios'))
+                                            ->listWithLineBreaks()
+                                            ->bulleted()
+                                            ->icon('heroicon-o-check-circle')
+                                            ->iconColor('success')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ])
+                            ->collapsible()
+                            ->collapsed()
+                            ->visible(fn($record) => !empty(self::getPermisosPorCategoria($record, 'precios'))),
+
+                        // 📋 TABULADOR DE COSTO
+                        Section::make('Tabulador de Costo')
+                            ->schema([
+                                Grid::make(3)
+                                    ->schema([
+                                        TextEntry::make('permissions_tabulador')
+                                            ->label('Permisos de Tabulador de Costo')
+                                            ->getStateUsing(fn($record) => self::getPermisosPorCategoria($record, 'tabulador'))
+                                            ->listWithLineBreaks()
+                                            ->bulleted()
+                                            ->icon('heroicon-o-check-circle')
+                                            ->iconColor('success')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ])
+                            ->collapsible()
+                            ->collapsed()
+                            ->visible(fn($record) => !empty(self::getPermisosPorCategoria($record, 'tabulador'))),
+
                         // 💼 VENTAS
                         Section::make('Procesos de Venta')
                             ->schema([
@@ -566,6 +604,8 @@ class RolInfolist
             'clientes' => ['clientes_'],
             'propiedades' => ['propiedades_'],
             'carteras' => ['carteras_'],
+            'precios' => ['precios_'],
+            'tabulador' => ['tabulador_'],
             'ventas' => ['ventas_'],
             'dictamenes' => ['dictamenes_'],
             'expedientes' => ['expedientes_'],
@@ -614,6 +654,8 @@ class RolInfolist
             'clientes_',
             'propiedades_',
             'carteras_',
+            'precios_',
+            'tabulador_',
             'ventas_',
             'dictamenes_',
             'expedientes_',

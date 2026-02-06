@@ -82,6 +82,7 @@ class PropiedadResource extends Resource
     {
         return [
             'index' => ListPropiedades::route('/'),
+            // 'view' => ViewPropiedad::route('/{record}'),
         ];
     }
 
@@ -115,5 +116,10 @@ class PropiedadResource extends Resource
     {
         $query = parent::getGlobalSearchEloquentQuery();
         return self::aplicarFiltrosDeSeguridad($query);
+    }
+
+    public static function getRecordRouteKeyName(): ?string
+    {
+        return 'id';
     }
 }

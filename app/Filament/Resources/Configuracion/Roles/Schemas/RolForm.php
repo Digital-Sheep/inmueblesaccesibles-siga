@@ -192,6 +192,48 @@ class RolForm
                                                     }),
                                             ]),
 
+                                        Section::make('Precios')
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->schema([
+                                                CheckboxList::make('precios')
+                                                    ->label('Permisos de Precios')
+                                                    ->options(self::getPermisosPorCategoria('precios'))
+                                                    ->columns(3)
+                                                    ->gridDirection('row')
+                                                    ->bulkToggleable()
+                                                    ->live()
+                                                    ->afterStateHydrated(function (CheckboxList $component, $record) {
+                                                        if ($record) {
+                                                            $permisos = $record->permissions->pluck('name')->toArray();
+                                                            $opciones = array_keys(self::getPermisosPorCategoria('precios'));
+                                                            $seleccionados = array_intersect($permisos, $opciones);
+                                                            $component->state($seleccionados);
+                                                        }
+                                                    }),
+                                            ]),
+
+                                        Section::make('Tabulador de Costo')
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->schema([
+                                                CheckboxList::make('tabulador')
+                                                    ->label('Permisos de Tabulador de Costo')
+                                                    ->options(self::getPermisosPorCategoria('tabulador'))
+                                                    ->columns(3)
+                                                    ->gridDirection('row')
+                                                    ->bulkToggleable()
+                                                    ->live()
+                                                    ->afterStateHydrated(function (CheckboxList $component, $record) {
+                                                        if ($record) {
+                                                            $permisos = $record->permissions->pluck('name')->toArray();
+                                                            $opciones = array_keys(self::getPermisosPorCategoria('tabulador'));
+                                                            $seleccionados = array_intersect($permisos, $opciones);
+                                                            $component->state($seleccionados);
+                                                        }
+                                                    }),
+                                            ]),
+
                                         Section::make('Procesos de Venta')
                                             ->collapsible()
                                             ->collapsed()
@@ -645,6 +687,8 @@ class RolForm
             'clientes' => ['clientes_'],
             'propiedades' => ['propiedades_'],
             'carteras' => ['carteras_'],
+            'precios' => ['precios_'],
+            'tabulador' => ['tabulador_'],
             'ventas' => ['ventas_'],
             'agenda' => ['agenda_'],
             'interacciones' => ['interacciones_'],
@@ -697,6 +741,8 @@ class RolForm
             'clientes_',
             'propiedades_',
             'carteras_',
+            'precios_',
+            'tabulador_',
             'ventas_',
             'dictamenes_',
             'expedientes_',
