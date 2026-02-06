@@ -2,7 +2,10 @@
 
 namespace App\Filament\Resources\Comercial\Propiedades\Pages;
 
+use App\Filament\Actions\AprobarPrecioAction;
 use App\Filament\Actions\CalcularCotizacionAction;
+use App\Filament\Actions\DecisionFinalPrecioAction;
+use App\Filament\Actions\RechazarPrecioAction;
 use App\Filament\Actions\ValidarYPublicarPropiedadAction;
 use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use Filament\Actions\EditAction;
@@ -22,7 +25,7 @@ class ViewPropiedad extends ViewRecord
                 ->icon('heroicon-o-pencil')
                 ->color('gray')
                 ->visible(
-                    function() {
+                    function () {
                         /** @var \App\Models\User $user */
                         $user = Auth::user();
 
@@ -35,6 +38,15 @@ class ViewPropiedad extends ViewRecord
 
             // 3. VALIDAR Y PUBLICAR
             ValidarYPublicarPropiedadAction::make(),
+
+            // 4. APROBAR PRECIO (Comercial o Contabilidad)
+            AprobarPrecioAction::make(),
+
+            // 5. RECHAZAR PRECIO (Comercial o Contabilidad)
+            RechazarPrecioAction::make(),
+
+            // 6. DECISIÓN FINAL (DGE)
+            DecisionFinalPrecioAction::make(),
         ];
     }
 }

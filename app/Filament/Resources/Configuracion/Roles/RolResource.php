@@ -28,7 +28,7 @@ class RolResource extends Resource
 
     protected static ?string $cluster = ConfiguracionCluster::class;
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'name';
 

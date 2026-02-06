@@ -28,6 +28,7 @@ class CalcularCotizacionAction
             ->label('Calcular Precio')
             ->icon('heroicon-o-calculator')
             ->color('success')
+            ->closeModalByClickingAway(false)
             ->visible(
                 function (Propiedad $record) {
                     /** @var \App\Models\User $user */
@@ -40,6 +41,7 @@ class CalcularCotizacionAction
             ->modalHeading('Cotizador de precio de venta')
             ->modalDescription('Calcula el precio sugerido basado en costos operativos y etapa procesal')
             ->modalWidth('5xl')
+            ->slideOver()
             ->schema(function (Propiedad $record) {
                 // Calcular tamaño automático
                 $tamanoAuto = $record->calcularTamanoAutomatico();
@@ -48,7 +50,7 @@ class CalcularCotizacionAction
                     // SECCIÓN 1: DATOS BASE
                     Section::make('📋 Datos base de la propiedad')
                         ->schema([
-                            Grid::make(3)
+                            Grid::make(4)
                                 ->schema([
                                     Placeholder::make('numero_credito')
                                         ->label('No. crédito')
@@ -61,6 +63,10 @@ class CalcularCotizacionAction
                                     Placeholder::make('construccion_m2_info')
                                         ->label('M² construcción')
                                         ->content($record->construccion_m2 ?? 'N/D'),
+
+                                    Placeholder::make('valor_comercial_info')
+                                        ->label('Valor comercial')
+                                        ->content('$' . number_format($record->precio_valor_comercial ?? 0, 2)),
                                 ]),
                         ])
                         ->collapsible(),
@@ -153,7 +159,7 @@ class CalcularCotizacionAction
 
                     // Actualizar estatus de la propiedad
                     $record->update([
-                        'estatus_comercial' => 'PUBLICADA',
+                        'estatus_comercial' => 'EN_REVISION',
                     ]);
 
                     Notification::make()
@@ -177,7 +183,8 @@ class CalcularCotizacionAction
                         ->persistent()
                         ->send();
                 }
-            });
+            })
+            ->stickyModalFooter(true);
     }
 
     /**
@@ -312,6 +319,72 @@ class CalcularCotizacionAction
 
         </div>
         ';
+
+        $valorComercial = $record->precio_valor_comercial;
+
+        if ($valorComercial && $valorComercial > 0) {
+            $html .= '
+    <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #d1d5db;">
+        <div style="font-weight: bold; font-size: 1.125rem; color: #111827; margin-bottom: 16px;">🏘️ Comparativo con valor comercial</div>
+
+        <div style="background-color: #dbeafe; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #1d4ed8; margin-bottom: 4px;">Valor de mercado de referencia</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #1e3a8a;">$' . number_format($valorComercial, 2) . '</div>
+        </div>';
+
+            // Comparativo 1: Sin Remodelación
+            $porcentajeSinRemo = (($valorComercial - $precioSinRemodelacion) / $valorComercial) * 100;
+            $esRemateSinRemo = $porcentajeSinRemo >= 35;
+            $colorSinRemo = $esRemateSinRemo ? '#059669' : '#dc2626';
+            $bgSinRemo = $esRemateSinRemo ? '#f0fdf4' : '#fef2f2';
+            $iconoSinRemo = $esRemateSinRemo ? '✅' : '⚠️';
+
+            $html .= '
+    <div style="background: ' . $bgSinRemo . '; border-left: 4px solid ' . $colorSinRemo . '; border-radius: 4px; padding: 12px; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;"><span style="font-weight: 600;">Sin remodelación:</span> $' . number_format($precioSinRemodelacion, 2) . '</div>
+            <div style="font-weight: bold; color: ' . $colorSinRemo . ';">' . $iconoSinRemo . ' ' . number_format($porcentajeSinRemo, 2) . '% debajo</div>
+        </div>
+    </div>';
+
+            // Comparativo 2: Precio Sugerido
+            $porcentajeSugerido = (($valorComercial - $precioVentaSugerido) / $valorComercial) * 100;
+            $esRemateSugerido = $porcentajeSugerido >= 35;
+            $colorSugerido = $esRemateSugerido ? '#059669' : '#dc2626';
+            $bgSugerido = $esRemateSugerido ? '#f0fdf4' : '#fef2f2';
+            $iconoSugerido = $esRemateSugerido ? '✅' : '⚠️';
+
+            $html .= '
+    <div style="background: ' . $bgSugerido . '; border-left: 4px solid ' . $colorSugerido . '; border-radius: 4px; padding: 12px; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;"><span style="font-weight: 600;">Precio sugerido:</span> $' . number_format($precioVentaSugerido, 2) . '</div>
+            <div style="font-weight: bold; color: ' . $colorSugerido . ';">' . $iconoSugerido . ' ' . number_format($porcentajeSugerido, 2) . '% debajo</div>
+        </div>
+    </div>';
+
+            // Comparativo 3: Con Descuento
+            $porcentajeDesc = (($valorComercial - $precioVentaConDescuento) / $valorComercial) * 100;
+            $esRemateDesc = $porcentajeDesc >= 35;
+            $colorDesc = $esRemateDesc ? '#059669' : '#dc2626';
+            $bgDesc = $esRemateDesc ? '#f0fdf4' : '#fef2f2';
+            $iconoDesc = $esRemateDesc ? '✅' : '⚠️';
+
+            $html .= '
+    <div style="background: ' . $bgDesc . '; border-left: 4px solid ' . $colorDesc . '; border-radius: 4px; padding: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;"><span style="font-weight: 600;">Con descuento:</span> $' . number_format($precioVentaConDescuento, 2) . '</div>
+            <div style="font-weight: bold; color: ' . $colorDesc . ';">' . $iconoDesc . ' ' . number_format($porcentajeDesc, 2) . '% debajo</div>
+        </div>
+    </div>
+
+    <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 4px; padding: 12px; margin-top: 16px; font-size: 0.875rem; color: #92400e;">
+        <strong>Nota:</strong> Para considerarse remate, el precio debe estar al menos <strong>35% debajo</strong> del valor comercial de mercado.
+    </div>
+</div>';
+        }
+
+        $html .= '
+    ';
 
         return new HtmlString($html);
     }

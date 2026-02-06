@@ -17,6 +17,7 @@ class ListPropiedades extends ListRecords
         return [
             CreateAction::make()
                 ->label('Agregar propiedad')
+                ->closeModalByClickingAway(false)
                 ->visible(
                     function(): bool {
                         /** @var \App\Models\User  $user */

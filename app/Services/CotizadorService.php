@@ -128,6 +128,7 @@ class CotizadorService
             $propiedad->update([
                 'tamano_propiedad' => $tamano,
                 'etapa_procesal_id' => $etapaProcesalId,
+                'precio_calculado' => true,
             ]);
 
             // 14. Sincronizar precios con propiedad

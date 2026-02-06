@@ -84,6 +84,7 @@ class Propiedad extends Model
         'precio_aprobado',
         'precio_fecha_aprobacion',
         'precio_requiere_decision_dge',
+        'precio_valor_comercial',
 
         'created_by',
         'updated_by',
@@ -111,6 +112,7 @@ class Propiedad extends Model
         'precio_aprobado' => 'boolean',
         'precio_fecha_aprobacion' => 'datetime',
         'precio_requiere_decision_dge' => 'boolean',
+        'precio_valor_comercial' => 'decimal:2',
     ];
 
     /**
@@ -168,7 +170,7 @@ class Propiedad extends Model
 
     public function aprobacionesPrecio(): HasMany
     {
-        return $this->hasMany(AprobacionPrecio::class);
+        return $this->hasMany(AprobacionPrecio::class, 'propiedad_id');
     }
 
     public function precioCustomSolicitante(): BelongsTo
@@ -388,5 +390,80 @@ class Propiedad extends Model
             'precio_aprobado' => false,
             'precio_requiere_decision_dge' => true,
         ]);
+    }
+
+    /**
+     * Calcular porcentaje debajo del valor comercial
+     */
+    public function getPorcentajeDebajoValorComercial(float $precio): ?float
+    {
+        if (!$this->precio_valor_comercial || $this->precio_valor_comercial <= 0) {
+            return null;
+        }
+
+        $diferencia = $this->precio_valor_comercial - $precio;
+        $porcentaje = ($diferencia / $this->precio_valor_comercial) * 100;
+
+        return round($porcentaje, 2);
+    }
+
+    /**
+     * Obtener comparativo para precio sin remodelación
+     */
+    public function getComparativoSinRemodelacionAttribute(): ?array
+    {
+        if (!$this->precio_sin_remodelacion || !$this->precio_valor_comercial) {
+            return null;
+        }
+
+        $porcentaje = $this->getPorcentajeDebajoValorComercial($this->precio_sin_remodelacion);
+
+        return [
+            'precio' => $this->precio_sin_remodelacion,
+            'valor_comercial' => $this->precio_valor_comercial,
+            'porcentaje_debajo' => $porcentaje,
+            'es_remate' => $porcentaje >= 35, // 35% o más = remate
+            'color' => $porcentaje >= 35 ? 'success' : 'danger',
+        ];
+    }
+
+    /**
+     * Obtener comparativo para precio sugerido
+     */
+    public function getComparativoSugeridoAttribute(): ?array
+    {
+        if (!$this->precio_venta_sugerido || !$this->precio_valor_comercial) {
+            return null;
+        }
+
+        $porcentaje = $this->getPorcentajeDebajoValorComercial($this->precio_venta_sugerido);
+
+        return [
+            'precio' => $this->precio_venta_sugerido,
+            'valor_comercial' => $this->precio_valor_comercial,
+            'porcentaje_debajo' => $porcentaje,
+            'es_remate' => $porcentaje >= 35,
+            'color' => $porcentaje >= 35 ? 'success' : 'danger',
+        ];
+    }
+
+    /**
+     * Obtener comparativo para precio con descuento
+     */
+    public function getComparativoConDescuentoAttribute(): ?array
+    {
+        if (!$this->precio_venta_con_descuento || !$this->precio_valor_comercial) {
+            return null;
+        }
+
+        $porcentaje = $this->getPorcentajeDebajoValorComercial($this->precio_venta_con_descuento);
+
+        return [
+            'precio' => $this->precio_venta_con_descuento,
+            'valor_comercial' => $this->precio_valor_comercial,
+            'porcentaje_debajo' => $porcentaje,
+            'es_remate' => $porcentaje >= 35,
+            'color' => $porcentaje >= 35 ? 'success' : 'danger',
+        ];
     }
 }

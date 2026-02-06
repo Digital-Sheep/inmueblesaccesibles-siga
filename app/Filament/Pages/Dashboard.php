@@ -8,7 +8,11 @@ use App\Filament\Widgets\MisProspectosPendientesWidget;
 use App\Filament\Widgets\MisVentasStatsWidget;
 use App\Filament\Widgets\PagosPorValidarWidget;
 use App\Filament\Widgets\PipelineVentasWidget;
+use App\Filament\Widgets\PreciosPendientesComercialWidget;
+use App\Filament\Widgets\PreciosPendientesContabilidadWidget;
+use App\Filament\Widgets\PreciosRequierenDecisionDGEWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
+use Illuminate\Support\Facades\Auth;
 
 class Dashboard extends BaseDashboard
 {
@@ -45,6 +49,11 @@ class Dashboard extends BaseDashboard
 
             // CONTABILIDAD/FINANZAS
             PagosPorValidarWidget::class,             // Tabla de pagos pendientes
+
+            // APROBACIONES DE PRECIO
+            PreciosPendientesComercialWidget::class,
+            PreciosPendientesContabilidadWidget::class,
+            PreciosRequierenDecisionDGEWidget::class,
         ];
     }
 
@@ -58,12 +67,15 @@ class Dashboard extends BaseDashboard
             default => '🌙 Buenas noches',
         };
 
-        return $greeting . ', ' . auth()->user()->name;
+        $user = Auth::user();
+
+        return $greeting . ', ' . $user->name;
     }
 
     public function getSubheading(): ?string
     {
-        $user = auth()->user();
+        $user = Auth::user();
+
         $role = $user->roles->first()?->name ?? 'Usuario';
         $sucursal = $user->sucursal?->nombre ?? 'Sin sucursal';
 

@@ -97,7 +97,7 @@ class PropiedadesTable
             ->recordActions([
                 ViewAction::make()
                     ->modalHeading('Detalles de la propiedad')
-                    ->modalWidth('4xl')
+                    ->modalWidth('5xl')
                     ->slideOver()
                     ->label('Ver Detalles')
                     ->icon('heroicon-o-eye')
@@ -108,9 +108,10 @@ class PropiedadesTable
 
                     EditAction::make()
                         ->modalHeading('Datos de la propiedad')
-                        ->modalWidth('4xl')
+                        ->modalWidth('5xl')
                         ->slideOver()
                         ->label('Editar')
+                        ->closeModalByClickingAway(false)
                         ->visible(
                             function (Propiedad $record) {
                                 /** @var \App\Models\User $user */

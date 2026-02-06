@@ -6,14 +6,18 @@ use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
+
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+
 use Filament\Schemas\Schema;
+
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\TextSize;
+
 use Illuminate\Support\Facades\Auth;
 
 class PropiedadInfolist
@@ -66,7 +70,7 @@ class PropiedadInfolist
                             ->icon('heroicon-o-home')
                             ->schema([
                                 // PRECIOS
-                                Section::make('💰 Precio de Venta')
+                                Section::make('Precio de Venta')
                                     ->schema([
                                         Grid::make(3)
                                             ->schema([
@@ -113,7 +117,7 @@ class PropiedadInfolist
                                     ->collapsible(),
 
                                 // UBICACIÓN
-                                Section::make('📍 Ubicación')
+                                Section::make('Ubicación')
                                     ->schema([
                                         Grid::make(3) // ← 3 columnas
                                             ->schema([
@@ -154,7 +158,7 @@ class PropiedadInfolist
                                     ->collapsible(),
 
                                 // CARACTERÍSTICAS
-                                Section::make('🏠 Características')
+                                Section::make('Características')
                                     ->schema([
                                         Grid::make(3)
                                             ->schema([
@@ -181,38 +185,38 @@ class PropiedadInfolist
                             ]),
 
                         // TAB 2: COTIZACIÓN
-                        Tab::make('Cotización')
-                            ->icon('heroicon-o-calculator')
-                            ->badge(fn($record) => $record->precio_calculado ? '✓' : null)
-                            ->badgeColor('success')
-                            ->visible(fn($record) => $record->precio_calculado)
-                            ->schema([
-                                Section::make('📊 Desglose de Cotización')
-                                    ->schema([
-                                        ViewEntry::make('desglose_cotizacion')
-                                            ->label('')
-                                            ->view('filament.infolists.desglose-cotizacion'),
-                                    ])
-                                    ->visible(
-                                        function () {
-                                            /** @var \App\Models\User $user */
-                                            $user = Auth::user();
+                        // Tab::make('Cotización')
+                        //     ->icon('heroicon-o-calculator')
+                        //     ->badge(fn($record) => $record->precio_calculado ? '✓' : null)
+                        //     ->badgeColor('success')
+                        //     ->visible(fn($record) => $record->precio_calculado)
+                        //     ->schema([
+                        //         Section::make('📊 Desglose de Cotización')
+                        //             ->schema([
+                        //                 ViewEntry::make('desglose_cotizacion')
+                        //                     ->label('')
+                        //                     ->view('filament.infolists.desglose-cotizacion'),
+                        //             ])
+                        //             ->visible(
+                        //                 function () {
+                        //                     /** @var \App\Models\User $user */
+                        //                     $user = Auth::user();
 
-                                            return $user->can('propiedades_ver_desglose_cotizacion');
-                                        }
-                                    ),
+                        //                     return $user->can('propiedades_ver_desglose_cotizacion');
+                        //                 }
+                        //             ),
 
-                                Section::make('💬 Retroalimentación de Aprobaciones')
-                                    ->description('Comentarios de Comercial y Contabilidad')
-                                    ->schema([
-                                        ViewEntry::make('retroalimentacion')
-                                            ->label('')
-                                            ->view('filament.infolists.retroalimentacion-precio'),
-                                    ])
-                                    ->visible(fn($record) => $record->aprobacionesPrecio()->exists())
-                                    ->collapsible()
-                                    ->collapsed(fn($record) => $record->precio_aprobado),
-                            ]),
+                        //         Section::make('💬 Retroalimentación de Aprobaciones')
+                        //             ->description('Comentarios de Comercial y Contabilidad')
+                        //             ->schema([
+                        //                 ViewEntry::make('retroalimentacion')
+                        //                     ->label('')
+                        //                     ->view('filament.infolists.retroalimentacion-precio'),
+                        //             ])
+                        //             ->visible(fn($record) => $record->aprobacionesPrecio()->exists())
+                        //             ->collapsible()
+                        //             ->collapsed(fn($record) => $record->precio_aprobado),
+                        //     ]),
 
                         // TAB 3: ADMIN Y LEGAL
                         Tab::make('Admin y Legal')

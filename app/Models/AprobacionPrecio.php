@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
 
 class AprobacionPrecio extends Model
 {
@@ -74,32 +75,36 @@ class AprobacionPrecio extends Model
     // --- MÉTODOS HELPER ---
 
     /**
-     * Aprobar el precio
+     * Aprobar la aprobación
      */
-    public function aprobar(User $aprobador, ?string $comentarios = null): void
+    public function aprobar(?int $userId = null, ?string $comentarios = null): void
     {
+        $user = Auth::user();
+
         $this->update([
             'estatus' => 'APROBADO',
-            'aprobador_id' => $aprobador->id,
-            'comentarios' => $comentarios,
+            'aprobador_id' => $userId ?? $user->id,
             'fecha_respuesta' => now(),
+            'comentarios' => $comentarios,
         ]);
     }
 
     /**
-     * Rechazar el precio con sugerencia alternativa
+     * Rechazar la aprobación con precio sugerido alternativo
      */
     public function rechazar(
-        User $aprobador,
-        ?float $precioAlternativo = null,
-        ?string $comentarios = null
+        ?int $userId = null,
+        ?string $comentarios = null,
+        ?float $precioSugeridoAlternativo = null
     ): void {
+        $user = Auth::user();
+
         $this->update([
             'estatus' => 'RECHAZADO',
-            'precio_sugerido_alternativo' => $precioAlternativo,
-            'aprobador_id' => $aprobador->id,
-            'comentarios' => $comentarios,
+            'aprobador_id' => $userId ?? $user->id,
             'fecha_respuesta' => now(),
+            'comentarios' => $comentarios,
+            'precio_sugerido_alternativo' => $precioSugeridoAlternativo,
         ]);
     }
 
@@ -128,14 +133,14 @@ class AprobacionPrecio extends Model
     }
 
     /**
-     * Obtener badge color según estatus
+     * Obtener color del badge según el estatus
      */
     public function getBadgeColorAttribute(): string
     {
         return match ($this->estatus) {
-            'PENDIENTE' => 'warning',
             'APROBADO' => 'success',
             'RECHAZADO' => 'danger',
+            'PENDIENTE' => 'warning',
             default => 'gray',
         };
     }

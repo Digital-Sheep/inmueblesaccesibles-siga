@@ -4,12 +4,14 @@ namespace App\Filament\Resources\Comercial\Propiedades\Schemas;
 
 use App\Models\CatEstado;
 use App\Models\CatMunicipio;
+
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
@@ -17,8 +19,10 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
+
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\Console\Input\Input;
 
@@ -31,10 +35,11 @@ class PropiedadForm
             ->components([
                 Tabs::make('Detalles de la Propiedad')
                     ->tabs([
-                        // --- PESTAÑA 1: UBICACIÓN ---
-                        Tab::make('Ubicación')
+                        // --- PESTAÑA 1: Información general ---
+                        Tab::make('Información general')
                             ->icon('heroicon-o-map-pin')
                             ->schema([
+                                // Section::make()
                                 Grid::make(2)
                                     ->schema([
                                         Select::make('sucursal_id')
@@ -96,15 +101,25 @@ class PropiedadForm
                         Tab::make('Precios y estatus')
                             ->icon('heroicon-o-banknotes')
                             ->schema([
-                                Grid::make(3)
+                                Grid::make(2)
                                     ->schema([
                                         TextInput::make('precio_lista')
-                                            ->label('Precio Lista (Banco)')
+                                            ->label('Precio lista (Banco)')
                                             ->prefix('$')
                                             ->numeric()
                                             ->mask(RawJs::make('$money($input)'))
                                             ->stripCharacters(',')
                                             ->placeholder('0.00'),
+
+                                        TextInput::make('precio_valor_comercial')
+                                            ->label('Valor comercial de mercado')
+                                            ->prefix('$')
+                                            ->numeric()
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters(',')
+                                            ->helperText('Valor de mercado para comparativo de remate.')
+                                            ->columnSpan(1)
+                                            ->live(debounce: 500),
                                     ]),
 
                                 Section::make('Estatus de control')
