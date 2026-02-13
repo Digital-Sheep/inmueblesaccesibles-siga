@@ -53,7 +53,7 @@ class CotizadorService
                 throw new \Exception("La propiedad no tiene precio base definido");
             }
 
-            // 4. CALCULAR COSTOS
+            // 4. CALCULAR COSTOS OPERATIVOS
             $costoRemodelacion = $tabulador->costo_remodelacion;
             $costoLuz = $tabulador->costo_luz;
             $costoAgua = $tabulador->costo_agua;
@@ -63,24 +63,28 @@ class CotizadorService
             $totalCostos = $costoRemodelacion + $costoLuz + $costoAgua +
                 $costoPredial + $costoGastosJuridicos;
 
-            // 5. CALCULAR INCREMENTO POR INVERSIÓN
-            $montoInversion = $precioBase * ($porcentajeInversion / 100);
+            // 5. CALCULAR COSTO TOTAL (Costo Aproximado)
+            // Base + Todos los costos operativos
+            $costoTotal = $precioBase + $totalCostos;
 
-            // 6. CALCULAR PRECIO SIN REMODELACIÓN
-            // Base + Costos sin remodelación + Inversión
-            $costosSinRemodelacion = $costoLuz + $costoAgua + $costoPredial + $costoGastosJuridicos;
-            $precioSinRemodelacion = $precioBase + $costosSinRemodelacion + $montoInversion;
+            // 6. CALCULAR PRECIO VENTA SUGERIDO
+            // Fórmula: Costo Total / (1 - % Inversión)
+            // Esto garantiza que el % de utilidad sea exactamente el % de inversión
+            $precioVentaSugerido = $costoTotal / (1 - ($porcentajeInversion / 100));
 
-            // 7. CALCULAR PRECIO VENTA SUGERIDO
-            // Base + TODOS los costos + Inversión
-            $precioVentaSugerido = $precioBase + $totalCostos + $montoInversion;
+            // 7. CALCULAR PRECIO SIN REMODELACIÓN
+            // Fórmula: Costo Total - (Remodelación × % Inversión)
+            // Se resta solo la parte proporcional de la remodelación según el margen
+            $precioSinRemodelacion = $costoTotal - ($costoRemodelacion * ($porcentajeInversion / 100));
 
             // 8. CALCULAR PRECIO CON DESCUENTO
             $precioVentaConDescuento = $precioVentaSugerido * (1 - ($porcentajeDescuento / 100));
 
-            // 9. CALCULAR PORCENTAJE DE UTILIDAD
-            // Utilidad = (Precio con desc - Costo total) / Precio con desc * 100
-            $costoTotal = $precioBase + $totalCostos;
+            // 9. CALCULAR MONTO DE INVERSIÓN (utilidad esperada)
+            // Diferencia entre precio sugerido y costo total
+            $montoInversion = $precioVentaSugerido - $costoTotal;
+
+            // 10. CALCULAR UTILIDAD Y PORCENTAJE (después del descuento)
             $utilidadConDescuento = $precioVentaConDescuento - $costoTotal;
             $porcentajeUtilidad = ($utilidadConDescuento / $precioVentaConDescuento) * 100;
 

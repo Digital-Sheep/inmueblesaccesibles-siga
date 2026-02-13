@@ -225,13 +225,22 @@ class CalcularCotizacionAction
         $totalCostos = $costoRemodelacion + $costoLuz + $costoAgua + $costoPredial + $costoGastosJuridicos;
         $costosSinRemodelacion = $costoLuz + $costoAgua + $costoPredial + $costoGastosJuridicos;
 
-        $montoInversion = $precioBase * ($porcentajeInversion / 100);
+        // 1. COSTO TOTAL (primero)
+        $costoTotal = $precioBase + $totalCostos;
 
-        $precioSinRemodelacion = $precioBase + $costosSinRemodelacion + $montoInversion;
-        $precioVentaSugerido = $precioBase + $totalCostos + $montoInversion;
+        // 2. PRECIO VENTA SUGERIDO (garantiza el % de utilidad)
+        $precioVentaSugerido = $costoTotal / (1 - ($porcentajeInversion / 100));
+
+        // 3. PRECIO SIN REMODELACIÓN
+        $precioSinRemodelacion = $costoTotal - ($costoRemodelacion * ($porcentajeInversion / 100));
+
+        // 4. PRECIO CON DESCUENTO
         $precioVentaConDescuento = $precioVentaSugerido * (1 - ($porcentajeDescuento / 100));
 
-        $costoTotal = $precioBase + $totalCostos;
+        // 5. MONTO DE INVERSIÓN (utilidad sin descuento)
+        $montoInversion = $precioVentaSugerido - $costoTotal;
+
+        // 6. UTILIDAD CON DESCUENTO
         $utilidadConDescuento = $precioVentaConDescuento - $costoTotal;
         $porcentajeUtilidad = ($utilidadConDescuento / $precioVentaConDescuento) * 100;
 
