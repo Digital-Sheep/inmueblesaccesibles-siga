@@ -73,9 +73,8 @@ class CotizadorService
             $precioVentaSugerido = $costoTotal / (1 - ($porcentajeInversion / 100));
 
             // 7. CALCULAR PRECIO SIN REMODELACIÓN
-            // Fórmula: Costo Total - (Remodelación × % Inversión)
-            // Se resta solo la parte proporcional de la remodelación según el margen
-            $precioSinRemodelacion = $costoTotal - ($costoRemodelacion * ($porcentajeInversion / 100));
+            // Fórmula: Precio Venta Sugerido - Costo Remodelación
+            $precioSinRemodelacion = $precioVentaSugerido - $costoRemodelacion;
 
             // 8. CALCULAR PRECIO CON DESCUENTO
             $precioVentaConDescuento = $precioVentaSugerido * (1 - ($porcentajeDescuento / 100));

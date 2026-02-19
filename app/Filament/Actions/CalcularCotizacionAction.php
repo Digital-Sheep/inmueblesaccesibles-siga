@@ -232,7 +232,7 @@ class CalcularCotizacionAction
         $precioVentaSugerido = $costoTotal / (1 - ($porcentajeInversion / 100));
 
         // 3. PRECIO SIN REMODELACIÓN
-        $precioSinRemodelacion = $costoTotal - ($costoRemodelacion * ($porcentajeInversion / 100));
+        $precioSinRemodelacion = $precioVentaSugerido - $costoRemodelacion;
 
         // 4. PRECIO CON DESCUENTO
         $precioVentaConDescuento = $precioVentaSugerido * (1 - ($porcentajeDescuento / 100));
