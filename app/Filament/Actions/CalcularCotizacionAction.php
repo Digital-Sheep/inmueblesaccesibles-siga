@@ -232,7 +232,8 @@ class CalcularCotizacionAction
         $precioVentaSugerido = $costoTotal / (1 - ($porcentajeInversion / 100));
 
         // 3. PRECIO SIN REMODELACIÓN
-        $precioSinRemodelacion = $precioVentaSugerido - $costoRemodelacion;
+        $precioSinRemodelacion = ($costoTotal - $costoRemodelacion)/(1 - ($porcentajeInversion / 100));
+        // $precioSinRemodelacion = $precioVentaSugerido - $costoRemodelacion;
 
         // 4. PRECIO CON DESCUENTO
         $precioVentaConDescuento = $precioVentaSugerido * (1 - ($porcentajeDescuento / 100));
@@ -242,7 +243,10 @@ class CalcularCotizacionAction
 
         // 6. UTILIDAD CON DESCUENTO
         $utilidadConDescuento = $precioVentaConDescuento - $costoTotal;
-        $porcentajeUtilidad = ($utilidadConDescuento / $precioVentaConDescuento) * 100;
+
+        $porcentajeUtilidad = ($utilidadConDescuento / $costoTotal) * 100;
+
+        // $porcentajeUtilidad = ($utilidadConDescuento / $precioVentaConDescuento) * 100;
 
         // GENERAR HTML CON ESTILOS INLINE
         $html = '
@@ -319,7 +323,10 @@ class CalcularCotizacionAction
 
             <!-- Utilidad -->
             <div style="display: flex; justify-content: space-between; align-items: center; background: #fef9c3; border-radius: 8px; padding: 16px; border: 2px solid #fde047;">
-                <span style="font-size: 1.125rem; font-weight: 700; color: #713f12;">💰 Utilidad esperada</span>
+                <div>
+                    <span style="font-size: 1.125rem; font-weight: 700; color: #713f12;">💰 Utilidad esperada</span>
+                    <span style="font-size: 0.875rem;"> (con descuento)</span>
+                </div>
                 <div style="text-align: right;">
                     <div style="font-size: 1.5rem; font-weight: 700; color: #713f12;">' . number_format($porcentajeUtilidad, 2) . '%</div>
                     <div style="font-size: 0.875rem; color: #854d0e;">$' . number_format($utilidadConDescuento, 2) . '</div>
@@ -415,7 +422,7 @@ class CalcularCotizacionAction
                 ->actions([
                     Action::make('revisar')
                         ->button()
-                        ->url(PropiedadResource::getUrl('view', ['record' => $record])),
+                        ->url(PropiedadResource::getUrl('index')),
                 ])
                 ->sendToDatabase($aprobadoresComercial);
         }
@@ -428,7 +435,7 @@ class CalcularCotizacionAction
                 ->actions([
                     Action::make('revisar')
                         ->button()
-                        ->url(PropiedadResource::getUrl('view', ['record' => $record])),
+                        ->url(PropiedadResource::getUrl('index')),
                 ])
                 ->sendToDatabase($aprobadoresContabilidad);
         }

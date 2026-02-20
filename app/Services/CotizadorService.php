@@ -85,7 +85,8 @@ class CotizadorService
 
             // 10. CALCULAR UTILIDAD Y PORCENTAJE (después del descuento)
             $utilidadConDescuento = $precioVentaConDescuento - $costoTotal;
-            $porcentajeUtilidad = ($utilidadConDescuento / $precioVentaConDescuento) * 100;
+
+            $porcentajeUtilidad = ($utilidadConDescuento / $costoTotal) * 100;
 
             // 10. Obtener versión
             $ultimaVersion = Cotizacion::where('propiedad_id', $propiedad->id)
