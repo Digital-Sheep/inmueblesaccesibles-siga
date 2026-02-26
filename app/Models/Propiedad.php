@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class Propiedad extends Model
@@ -206,6 +208,14 @@ class Propiedad extends Model
     public function archivos(): MorphMany
     {
         return $this->morphMany(Archivo::class, 'entidad');
+    }
+
+    /**
+     * Relación con el esquema de pagos
+     */
+    public function esquemaPago(): HasOne
+    {
+        return $this->hasOne(EsquemaPago::class);
     }
 
     // --- AUDITORÍA ---
@@ -465,5 +475,31 @@ class Propiedad extends Model
             'es_remate' => $porcentaje >= 35,
             'color' => $porcentaje >= 35 ? 'success' : 'danger',
         ];
+    }
+
+    /**
+     * Obtener o crear el esquema de pago con valores por defecto
+     */
+    public function getOrCreateEsquemaPago(): EsquemaPago
+    {
+        if (!$this->esquemaPago) {
+            $esquema = EsquemaPago::create([
+                'propiedad_id' => $this->id,
+                'apartado_monto' => 10000.00,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
+            ]);
+
+            // Crear detalles por defecto
+            foreach (EsquemaPago::getEsquemaDefault() as $detalle) {
+                $esquema->detalles()->create($detalle);
+            }
+
+            $esquema->actualizarTotalPorcentaje();
+
+            return $esquema->fresh();
+        }
+
+        return $this->esquemaPago;
     }
 }

@@ -7,6 +7,8 @@ use App\Filament\Actions\CalcularCotizacionAction;
 use App\Filament\Actions\DecisionFinalPrecioAction;
 use App\Filament\Actions\RechazarPrecioAction;
 use App\Filament\Actions\ValidarYPublicarPropiedadAction;
+use App\Filament\Resources\Comercial\Propiedades\Actions\EliminarCotizacionAction;
+use App\Filament\Resources\Comercial\Propiedades\Actions\RecotizarAction;
 use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -35,6 +37,10 @@ class ViewPropiedad extends ViewRecord
 
             // 2. CALCULAR PRECIO
             CalcularCotizacionAction::make(),
+
+            RecotizarAction::make(),
+
+            EliminarCotizacionAction::make(),
 
             // 3. VALIDAR Y PUBLICAR
             ValidarYPublicarPropiedadAction::make(),

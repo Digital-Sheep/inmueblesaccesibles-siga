@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Comercial\Propiedades\Tables;
 
 use App\Filament\Actions\CalcularCotizacionAction;
 use App\Filament\Actions\ValidarYPublicarPropiedadAction;
+use App\Filament\Actions\EliminarCotizacionAction;
+use App\Filament\Actions\RecotizarAction;
 use App\Models\Propiedad;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -122,6 +124,10 @@ class PropiedadesTable
                         ),
 
                     CalcularCotizacionAction::make(),
+
+                    RecotizarAction::make(),
+
+                    EliminarCotizacionAction::make(),
 
                     ValidarYPublicarPropiedadAction::make(),
 

@@ -60,8 +60,7 @@ class CotizadorService
             $costoPredial = $tabulador->costo_predial;
             $costoGastosJuridicos = $tabulador->costo_gastos_juridicos;
 
-            $totalCostos = $costoRemodelacion + $costoLuz + $costoAgua +
-                $costoPredial + $costoGastosJuridicos;
+            $totalCostos = $costoRemodelacion + $costoLuz + $costoAgua + $costoPredial + $costoGastosJuridicos;
 
             // 5. CALCULAR COSTO TOTAL (Costo Aproximado)
             // Base + Todos los costos operativos
@@ -74,7 +73,7 @@ class CotizadorService
 
             // 7. CALCULAR PRECIO SIN REMODELACIÓN
             // Fórmula: Precio Venta Sugerido - Costo Remodelación
-            $precioSinRemodelacion = $precioVentaSugerido - $costoRemodelacion;
+            $precioSinRemodelacion = ($costoTotal - $costoRemodelacion)/(1 - ($porcentajeInversion / 100));
 
             // 8. CALCULAR PRECIO CON DESCUENTO
             $precioVentaConDescuento = $precioVentaSugerido * (1 - ($porcentajeDescuento / 100));

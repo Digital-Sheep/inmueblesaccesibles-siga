@@ -11,7 +11,7 @@ class ValidarYPublicarPropiedadAction
     public static function make(): Action
     {
         return Action::make('validar_publicar')
-            ->label('✅ Validar y Publicar')
+            ->label('Validar y Publicar')
             ->icon('heroicon-o-check-badge')
             ->color('success')
             ->requiresConfirmation()
@@ -29,7 +29,7 @@ class ValidarYPublicarPropiedadAction
             ->disabled(fn(Propiedad $record) => !$record->estaListaParaPublicar())
             ->action(function (Propiedad $record) {
                 $record->update([
-                    'estatus_comercial' => 'PUBLICADA',
+                    'estatus_comercial' => 'DISPONIBLE',
                 ]);
 
                 $leyenda = $record->leyenda_precio;

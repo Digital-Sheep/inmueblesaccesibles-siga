@@ -51,7 +51,7 @@ class PropiedadInfolist
                                         TextEntry::make('estatus_comercial')
                                             ->badge()
                                             ->color(fn(string $state): string => match ($state) {
-                                                'DISPONIBLE', 'PUBLICADA' => 'success',
+                                                'DISPONIBLE', 'DISPONIBLE' => 'success',
                                                 'APARTADA' => 'warning',
                                                 'VENDIDA' => 'info',
                                                 'BAJA', 'BORRADOR' => 'gray',
@@ -115,6 +115,51 @@ class PropiedadInfolist
                                     ])
                                     ->visible(fn($record) => $record->precio_calculado || $record->precio_lista)
                                     ->collapsible(),
+
+                                Section::make('📊 Historial de Cotizaciones')
+                                    ->schema([
+                                        RepeatableEntry::make('cotizaciones')
+                                            ->label('')
+                                            ->schema([
+                                                TextEntry::make('version')
+                                                    ->label('Versión')
+                                                    ->badge()
+                                                    ->color(fn($record) => $record->activa ? 'success' : 'gray'),
+
+                                                TextEntry::make('created_at')
+                                                    ->label('Fecha')
+                                                    ->dateTime('d/m/Y H:i'),
+
+                                                TextEntry::make('precio_venta_sugerido')
+                                                    ->label('Precio Sugerido')
+                                                    ->money('MXN')
+                                                    ->weight(FontWeight::Bold),
+
+                                                TextEntry::make('precio_venta_con_descuento')
+                                                    ->label('Con Descuento')
+                                                    ->money('MXN'),
+
+                                                TextEntry::make('porcentaje_utilidad')
+                                                    ->label('Utilidad')
+                                                    ->suffix('%')
+                                                    ->color('success'),
+
+                                                TextEntry::make('activa')
+                                                    ->label('Estado')
+                                                    ->badge()
+                                                    ->formatStateUsing(fn($state) => $state ? 'ACTIVA' : 'HISTÓRICA')
+                                                    ->color(fn($state) => $state ? 'success' : 'gray'),
+                                            ])
+                                            ->columns(6)
+                                            ->contained(false),
+                                    ])
+                                    ->visible(
+                                        fn($record) =>
+                                        $record->cotizaciones()->exists() &&
+                                            Auth::user()->can('propiedades_ver_datos_sensibles')
+                                    )
+                                    ->collapsible()
+                                    ->collapsed(),
 
                                 // UBICACIÓN
                                 Section::make('Ubicación')
