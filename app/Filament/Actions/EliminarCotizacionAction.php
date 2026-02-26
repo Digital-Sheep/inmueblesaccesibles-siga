@@ -17,7 +17,7 @@ class EliminarCotizacionAction
             ->color('danger')
             ->visible(
                 fn(Propiedad $record) =>
-                $record->precio_calculado &&
+                in_array($record->estatus_comercial, ['EN_REVISION', 'DISPONIBLE']) &&
                     auth()->user()->can('propiedades_eliminar_cotizacion')
             )
             ->requiresConfirmation()

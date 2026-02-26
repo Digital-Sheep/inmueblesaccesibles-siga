@@ -17,7 +17,7 @@ class RecotizarAction
             ->color('warning')
             ->visible(
                 fn(Propiedad $record) =>
-                $record->precio_calculado &&
+                $record->estatus_comercial === 'EN_REVISION' &&
                     !$record->precio_aprobado &&
                     auth()->user()->can('propiedades_calcular_precio')
             )

@@ -243,7 +243,7 @@ class CalcularCotizacionAction
 
                         // 4. Actualizar estatus de la propiedad
                         $record->update([
-                            'estatus_comercial' => 'DISPONIBLE',
+                            'estatus_comercial' => 'EN_REVISION',
                         ]);
                     });
 
