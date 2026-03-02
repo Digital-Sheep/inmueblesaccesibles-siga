@@ -154,9 +154,13 @@ class PropiedadInfolist
                                             ->contained(false),
                                     ])
                                     ->visible(
-                                        fn($record) =>
-                                        $record->cotizaciones()->exists() &&
-                                            Auth::user()->can('propiedades_ver_datos_sensibles')
+                                        function ($record) {
+                                            /** @var \App\Models\User $user */
+                                            $user = Auth::user();
+
+                                            return $record->cotizaciones()->exists() &&
+                                                $user->can('propiedades_ver_datos_sensibles');
+                                        }
                                     )
                                     ->collapsible()
                                     ->collapsed(),

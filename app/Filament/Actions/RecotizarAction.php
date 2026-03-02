@@ -5,6 +5,7 @@ namespace App\Filament\Actions;
 use App\Models\Propiedad;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class RecotizarAction
@@ -16,10 +17,14 @@ class RecotizarAction
             ->icon('heroicon-o-arrow-path')
             ->color('warning')
             ->visible(
-                fn(Propiedad $record) =>
-                $record->estatus_comercial === 'EN_REVISION' &&
-                    !$record->precio_aprobado &&
-                    auth()->user()->can('propiedades_calcular_precio')
+                function (Propiedad $record) {
+                    /** @var \App\Models\User $user */
+                    $user = Auth::user();
+
+                    return $record->estatus_comercial === 'EN_REVISION' &&
+                        !$record->precio_aprobado &&
+                        $user->can('propiedades_calcular_precio');
+                }
             )
             ->requiresConfirmation()
             ->modalHeading('¿Recotizar Propiedad?')

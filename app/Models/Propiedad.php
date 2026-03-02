@@ -387,6 +387,7 @@ class Propiedad extends Model
         $this->update([
             'precio_aprobado' => true,
             'precio_fecha_aprobacion' => now(),
+            'estatus_comercial' => 'DISPONIBLE',
             'precio_requiere_decision_dge' => false,
         ]);
     }

@@ -5,6 +5,7 @@ namespace App\Filament\Actions;
 use App\Models\Propiedad;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class EliminarCotizacionAction
@@ -16,9 +17,13 @@ class EliminarCotizacionAction
             ->icon('heroicon-o-trash')
             ->color('danger')
             ->visible(
-                fn(Propiedad $record) =>
-                in_array($record->estatus_comercial, ['EN_REVISION', 'DISPONIBLE']) &&
-                    auth()->user()->can('propiedades_eliminar_cotizacion')
+                function (Propiedad $record) {
+                    /** @var \App\Models\User $user */
+                    $user = Auth::user();
+
+                    return in_array($record->estatus_comercial, ['EN_REVISION', 'DISPONIBLE']) &&
+                        $user->can('propiedades_eliminar_cotizacion');
+                }
             )
             ->requiresConfirmation()
             ->modalHeading('¿Eliminar Cotización?')

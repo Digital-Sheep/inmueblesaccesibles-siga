@@ -181,7 +181,7 @@ class RechazarPrecioAction
                 ->actions([
                     Action::make('ver')
                         ->label('Ver Propiedad')
-                        ->url(\App\Filament\Resources\Comercial\Propiedades\PropiedadResource::getUrl('view', ['record' => $record]))
+                        ->url(\App\Filament\Resources\Comercial\Propiedades\PropiedadResource::getUrl('index'))
                         ->button(),
                 ])
                 ->persistent() // No se cierra automáticamente

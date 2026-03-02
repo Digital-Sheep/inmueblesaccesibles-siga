@@ -178,7 +178,7 @@ class AprobarPrecioAction
             ->actions([
                 Action::make('ver')
                     ->label('Ver Propiedad')
-                    ->url(PropiedadResource::getUrl('view', ['record' => $record]))
+                    ->url(PropiedadResource::getUrl('index'))
                     ->button(),
             ])
             ->sendToDatabase($cotizacion->calculadaPor);
@@ -223,7 +223,7 @@ class AprobarPrecioAction
                 ->actions([
                     Action::make('revisar')
                         ->label('Revisar Ahora')
-                        ->url(PropiedadResource::getUrl('view', ['record' => $record]))
+                        ->url(PropiedadResource::getUrl('index'))
                         ->button(),
                 ])
                 ->sendToDatabase($usuario);
@@ -259,7 +259,7 @@ class AprobarPrecioAction
                 ->actions([
                     Action::make('ver')
                         ->label('Ver Propiedad')
-                        ->url(PropiedadResource::getUrl('view', ['record' => $record]))
+                        ->url(PropiedadResource::getUrl('index'))
                         ->button(),
                 ])
                 ->persistent()
