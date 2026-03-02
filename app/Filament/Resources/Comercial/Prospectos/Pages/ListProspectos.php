@@ -24,13 +24,17 @@ class ListProspectos extends ListRecords
                 ->createAnother(false)
 
                 ->before(function (array $data, \Filament\Actions\CreateAction $action) {
-
                     $celularLimpio = preg_replace('/[^0-9]/', '', $data['celular']);
 
-                    $duplicado = Prospecto::where('celular', 'LIKE', "%{$celularLimpio}%")
-                        ->orWhere('email', $data['email'])
-                        ->first();
+                    $duplicadoPorCelular = Prospecto::where('celular', 'LIKE', "%{$celularLimpio}%")->first();
 
+                    $duplicadoPorEmail = null;
+
+                    if (!empty($data['email'])) {
+                        $duplicadoPorEmail = Prospecto::where('email', $data['email'])->first();
+                    }
+
+                    $duplicado = $duplicadoPorCelular ?? $duplicadoPorEmail;
 
                     if ($duplicado) {
 

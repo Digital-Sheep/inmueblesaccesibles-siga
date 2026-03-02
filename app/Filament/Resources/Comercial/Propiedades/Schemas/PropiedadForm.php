@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Comercial\Propiedades\Schemas;
 
 use App\Models\CatEstado;
 use App\Models\CatMunicipio;
+use App\Models\Cartera;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -40,16 +41,30 @@ class PropiedadForm
                             ->icon('heroicon-o-map-pin')
                             ->schema([
                                 // Section::make()
-                                Grid::make(2)
+                                Grid::make(3)
                                     ->schema([
                                         Select::make('sucursal_id')
                                             ->relationship('sucursal', 'nombre')
                                             ->required()
-                                            ->label('Sucursal asignada'),
+                                            ->label('Sucursal asignada')
+                                            ->native(false),
+
+                                        Select::make('cartera_id')
+                                            ->label('Cartera')
+                                            ->options(
+                                                Cartera::query()
+                                                    ->orderBy('nombre')
+                                                    ->pluck('nombre', 'id')
+                                            )
+                                            ->searchable()
+                                            ->native(false)
+                                            ->placeholder('Sin cartera asignada')
+                                            ->helperText('Opcional: Asigna esta propiedad a una cartera'),
 
                                         TextInput::make('numero_credito')
                                             ->label('No. Crédito / ID')
                                             ->required()
+                                            ->unique(ignoreRecord: true)
                                             ->maxLength(255),
                                     ]),
 
