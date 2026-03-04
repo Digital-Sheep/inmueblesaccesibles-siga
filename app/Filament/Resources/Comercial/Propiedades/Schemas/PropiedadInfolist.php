@@ -76,7 +76,15 @@ class PropiedadInfolist
                                             ->schema([
                                                 TextEntry::make('precio_lista')
                                                     ->label('Precio Lista (Banco)')
-                                                    ->money('MXN'),
+                                                    ->money('MXN')
+                                                    ->visible(
+                                                        function ($record) {
+                                                            /** @var \App\Models\User $user */
+                                                            $user = Auth::user();
+
+                                                            return $user->can('propiedades_ver_datos_sensibles');
+                                                        }
+                                                    ),
 
                                                 TextEntry::make('precio_sin_remodelacion')
                                                     ->label('Precio Sin Remodelación')
@@ -105,7 +113,15 @@ class PropiedadInfolist
                                                     ->suffix('%')
                                                     ->weight(FontWeight::Bold)
                                                     ->color('warning')
-                                                    ->visible(fn($record) => $record->precio_calculado),
+                                                    ->visible(
+                                                        function ($record) {
+                                                            /** @var \App\Models\User $user */
+                                                            $user = Auth::user();
+
+                                                            return $record->precio_calculado &&
+                                                                $user->can('propiedades_ver_datos_sensibles');
+                                                        }
+                                                    )
                                             ]),
 
                                         ViewEntry::make('leyenda_precio_view')
