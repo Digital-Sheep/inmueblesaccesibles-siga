@@ -112,13 +112,13 @@ class ClienteResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->soloProspectos();
+        $query = parent::getEloquentQuery();
         return self::aplicarFiltrosDeSeguridad($query);
     }
 
     public static function getGlobalSearchEloquentQuery(): Builder
     {
-        $query = parent::getGlobalSearchEloquentQuery()->soloProspectos();
+        $query = parent::getGlobalSearchEloquentQuery();
         return self::aplicarFiltrosDeSeguridad($query);
     }
 }
