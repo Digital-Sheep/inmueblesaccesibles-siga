@@ -58,7 +58,8 @@ class ProspectoForm
                                     ->default('NUEVO')
                                     ->live()
                                     ->native(false)
-                                    ->required(),
+                                    ->required()
+                                    ->disabled(),
 
                                 Select::make('origen')
                                     ->options([

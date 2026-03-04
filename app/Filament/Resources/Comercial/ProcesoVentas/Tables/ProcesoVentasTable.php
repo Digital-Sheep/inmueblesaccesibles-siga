@@ -161,9 +161,9 @@ class ProcesoVentasTable
             'APARTADO_GENERADO' => !$record->archivos()->where('categoria', 'CONTRATO_APARTADO_FIRMADO')->exists()
                 ? 'Subir Contrato Firmado'
                 : 'Subir Pago de Apartado',
-            'APARTADO_VALIDADO' => 'Solicitar Dictamen',
-            'DICTAMINADO_POSITIVO' => 'Solicitar Enganche',
+            'APARTADO_VALIDADO' => 'Solicitar Enganche',
             'ENGANCHE_SOLICITADO' => 'Subir Pago de Enganche',
+            'ENGANCHE_PAGADO' => 'Solicitar Dictamen',
             'COMPRA_FINALIZADA' => 'Solicitar Liquidación',
             'LIQUIDACION_SOLICITADA' => 'Subir Pago de Liquidación',
             'ESCRITURADO' => 'Programar Entrega',
@@ -180,8 +180,9 @@ class ProcesoVentasTable
                 : 'heroicon-o-home',
             'VISITA_REALIZADA' => 'heroicon-o-document-text',
             'APARTADO_GENERADO' => 'heroicon-o-document-arrow-up',
-            'APARTADO_VALIDADO' => 'heroicon-o-scale',
-            'DICTAMINADO_POSITIVO', 'COMPRA_FINALIZADA', 'LIQUIDACION_SOLICITADA' => 'heroicon-o-currency-dollar',
+            'APARTADO_VALIDADO' => 'heroicon-o-currency-dollar',
+            'ENGANCHE_PAGADO' => 'heroicon-o-scale',
+            'COMPRA_FINALIZADA', 'LIQUIDACION_SOLICITADA' => 'heroicon-o-currency-dollar',
             'ENGANCHE_SOLICITADO' => 'heroicon-o-arrow-up-tray',
             'ESCRITURADO' => 'heroicon-o-calendar',
             'ENTREGA_PROGRAMADA' => 'heroicon-o-home-modern',
@@ -192,8 +193,8 @@ class ProcesoVentasTable
     private static function getNextActionColor(ProcesoVenta $record): string
     {
         return match ($record->estatus) {
-            'DICTAMINADO_POSITIVO', 'ENGANCHE_SOLICITADO', 'LIQUIDACION_SOLICITADA' => 'success',
-            'APARTADO_VALIDADO' => 'info',
+            'APARTADO_VALIDADO', 'ENGANCHE_SOLICITADO', 'LIQUIDACION_SOLICITADA' => 'success',
+            'ENGANCHE_PAGADO' => 'info',
             'ESCRITURADO', 'ENTREGA_PROGRAMADA' => 'warning',
             default => 'primary',
         };
@@ -224,9 +225,9 @@ class ProcesoVentasTable
             'APARTADO_GENERADO' => !$record->archivos()->where('categoria', 'CONTRATO_APARTADO_FIRMADO')->exists()
                 ? self::getSubirContratoFirmadoSchema()
                 : self::getSubirPagoApartadoSchema(),
-            'APARTADO_VALIDADO' => self::getSolicitarDictamenSchema(),
-            'DICTAMINADO_POSITIVO' => self::getSolicitarEngancheSchema(),
+            'APARTADO_VALIDADO' => self::getSolicitarEngancheSchema(),
             'ENGANCHE_SOLICITADO' => self::getSubirPagoEngancheSchema(),
+            'ENGANCHE_PAGADO' => self::getSolicitarDictamenSchema(),
             'COMPRA_FINALIZADA' => self::getSolicitarLiquidacionSchema(),
             'LIQUIDACION_SOLICITADA' => self::getSubirPagoLiquidacionSchema(),
             'ESCRITURADO' => self::getProgramarEntregaSchema(),
@@ -383,11 +384,11 @@ class ProcesoVentasTable
     {
         return [
             TextInput::make('monto_enganche')
-                ->label('Monto del enganche (30-45% del valor)')
+                ->label('Monto del enganche')
                 ->numeric()
                 ->required()
                 ->prefix('$')
-                ->helperText('Enganche mínimo 30% del valor total de la propiedad')
+                ->helperText('Enganche (Primer pago requerido)')
                 ->mask(RawJs::make('$money($input)'))
                 ->stripCharacters(','),
 
@@ -557,9 +558,9 @@ class ProcesoVentasTable
             'APARTADO_GENERADO' => !$record->archivos()->where('categoria', 'CONTRATO_APARTADO_FIRMADO')->exists()
                 ? self::ejecutarSubirContratoFirmado($record, $data)
                 : self::ejecutarSubirPagoApartado($record, $data),
-            'APARTADO_VALIDADO' => self::ejecutarSolicitarDictamen($record, $data),
-            'DICTAMINADO_POSITIVO' => self::ejecutarSolicitarEnganche($record, $data),
+            'APARTADO_VALIDADO' => self::ejecutarSolicitarEnganche($record, $data),
             'ENGANCHE_SOLICITADO' => self::ejecutarSubirPagoEnganche($record, $data),
+            'ENGANCHE_PAGADO' => self::ejecutarSolicitarDictamen($record, $data),
             'COMPRA_FINALIZADA' => self::ejecutarSolicitarLiquidacion($record, $data),
             'LIQUIDACION_SOLICITADA' => self::ejecutarSubirPagoLiquidacion($record, $data),
             'ESCRITURADO' => self::ejecutarProgramarEntrega($record, $data),
@@ -567,7 +568,6 @@ class ProcesoVentasTable
             default => null,
         };
     }
-
     // ========================================
     // EJECUCIÓN 1: SUBIR AVISO
     // ========================================
@@ -721,7 +721,7 @@ class ProcesoVentasTable
         Notification::make()
             ->success()
             ->title('Enganche solicitado')
-            ->body('Se ha notificado al cliente sobre el pago del enganche.')
+            ->body('Se ha solicitado el pago del enganche.')
             ->send();
     }
 

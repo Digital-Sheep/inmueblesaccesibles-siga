@@ -151,7 +151,7 @@ class PagosTable
                                         ->actions([
                                             Action::make('completar')
                                                 ->button()
-                                                ->url(ClienteResource::getUrl('edit', ['record' => $nuevoCliente->id])),
+                                                ->url(ClienteResource::getUrl('index')),
                                         ])
                                         ->sendToDatabase($destinatarios);
                                 }
@@ -160,14 +160,25 @@ class PagosTable
                             }
                         }
 
-                        if (in_array($record->concepto, ['ENGANCHE', 'LIQUIDACION'])) {
+                        if ($record->concepto === 'ENGANCHE') {
+                            $record->procesoVenta->update(['estatus' => 'ENGANCHE_PAGADO']);
 
+                            Notification::make()
+                                ->success()
+                                ->title('Enganche validado')
+                                ->body('El primer pago ha sido validado. Siguiente paso: Solicitar dictamen jurídico.')
+                                ->send();
+                        }
+
+                        if ($record->concepto === 'LIQUIDACION') {
                             $procesoVenta = $record->procesoVenta;
-
                             $existeCompra = ProcesoCompra::where('proceso_venta_id', $procesoVenta->id)->exists();
 
                             if (!$existeCompra) {
-                                $dictamen = $procesoVenta->dictamenes()->where('estatus', 'TERMINADO')->latest()->first();
+                                $dictamen = $procesoVenta->dictamenes()
+                                    ->where('estatus', 'TERMINADO')
+                                    ->latest()
+                                    ->first();
 
                                 ProcesoCompra::create([
                                     'proceso_venta_id' => $procesoVenta->id,
@@ -179,7 +190,6 @@ class PagosTable
                                     'created_by' => Auth::id(),
                                 ]);
 
-                                // Actualizar estatus de la venta para reflejar que ya estamos comprando
                                 $procesoVenta->update(['estatus' => 'EN_PROCESO_COMPRA']);
 
                                 Notification::make()

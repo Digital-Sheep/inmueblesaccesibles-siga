@@ -41,9 +41,9 @@ class PipelineVentasWidget extends ChartWidget
             'ACTIVO' => 'Negociación',
             'VISITA_REALIZADA' => 'Visita Realizada',
             'APARTADO_VALIDADO' => 'Apartado',
+            'ENGANCHE_PAGADO' => 'Enganche (50%)',
             'EN_DICTAMINACION' => 'Dictaminación',
             'DICTAMINADO_POSITIVO' => 'Dictaminado',
-            'ENGANCHE_PAGADO' => 'Enganche',
             'EN_PROCESO_COMPRA' => 'En Compra',
             'LIQUIDACION_PAGADA' => 'Liquidación',
             'ESCRITURADO' => 'Escriturado',
@@ -66,8 +66,15 @@ class PipelineVentasWidget extends ChartWidget
                     'label' => 'Procesos Activos',
                     'data' => $valores,
                     'backgroundColor' => [
-                        '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
-                        '#10b981', '#06b6d4', '#6366f1', '#84cc16', '#14b8a6'
+                        '#3b82f6',
+                        '#8b5cf6',
+                        '#ec4899',
+                        '#f59e0b',
+                        '#10b981',
+                        '#06b6d4',
+                        '#6366f1',
+                        '#84cc16',
+                        '#14b8a6'
                     ],
                 ],
             ],
