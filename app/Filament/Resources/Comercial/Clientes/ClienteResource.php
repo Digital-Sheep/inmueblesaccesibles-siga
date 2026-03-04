@@ -87,33 +87,38 @@ class ClienteResource extends Resource
             ]);
     }
 
-    // protected function aplicarFiltrosDeSeguridad($query)
-    // {
-    //     $user = Auth::user();
+    private static function aplicarFiltrosDeSeguridad(Builder $query): Builder
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
-    //     // Si tiene permiso de ver todos los clientes (nivel corporativo)
-    //     if ($user->can('clientes_ver_todos')) {
-    //         return $query;
-    //     }
+        // Si tiene permiso de ver TODOS los prospectos
+        if ($user->can('clientes_ver_todos')) {
+            return $query;
+        }
 
-    //     // Si tiene permiso de ver toda su sucursal
-    //     if ($user->can('clientes_ver_sucursal_completa') && $user->sucursal_id) {
-    //         return $query->where('sucursal_id', $user->sucursal_id);
-    //     }
+        // Filtro por sucursal
+        if ($user->sucursal_id !== null) {
+            $query->where('sucursal_id', $user->sucursal_id);
+        }
 
-    //     // Por defecto: solo ve sus propios clientes
-    //     return $query->where('usuario_responsable_id', $user->id);
-    // }
+        // Si tiene permiso de ver la sucursal completa, no filtramos por usuario
+        if (!$user->can('prospectos_ver_sucursal_completa')) {
+            $query->where('usuario_responsable_id', $user->id);
+        }
 
-    // public static function getEloquentQuery(): Builder
-    // {
-    //     $query = parent::getEloquentQuery();
-    //     return self::aplicarFiltrosDeSeguridad($query);
-    // }
+        return $query;
+    }
 
-    // public static function getGlobalSearchEloquentQuery(): Builder
-    // {
-    //     $query = parent::getGlobalSearchEloquentQuery();
-    //     return self::aplicarFiltrosDeSeguridad($query);
-    // }
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->soloProspectos();
+        return self::aplicarFiltrosDeSeguridad($query);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        $query = parent::getGlobalSearchEloquentQuery()->soloProspectos();
+        return self::aplicarFiltrosDeSeguridad($query);
+    }
 }
