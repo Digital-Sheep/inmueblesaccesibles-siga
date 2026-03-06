@@ -64,7 +64,10 @@ class ProspectoForm
                                 Select::make('origen')
                                     ->options([
                                         'CALL' => 'Llamó a la sucursal',
-                                        'FACEBOOK' => 'Campaña Facebook',
+                                        'FACEBOOK' => 'Facebook',
+                                        'MARKETPLACE' => 'Marketplace',
+                                        'INSTAGRAM' => 'Instagram',
+                                        'LINKEDIN' => 'LinkedIn',
                                         'WEB' => 'Sitio web',
                                         'REFERIDO' => 'Referido',
                                         'WALK_IN' => 'Visitó sucursal',
