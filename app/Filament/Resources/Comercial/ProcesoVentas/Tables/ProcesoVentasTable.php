@@ -574,10 +574,14 @@ class ProcesoVentasTable
 
     private static function ejecutarSubirAviso(ProcesoVenta $record, array $data): void
     {
+        $nombreInteresado = $record->interesado_type === 'App\\Models\\Prospecto'
+            ? $record->interesado->nombre_completo
+            : $record->interesado->nombres . " " . $record->interesado->apellido_paterno;
+
         $record->interesado->archivos()->create([
             'categoria'       => 'AVISO_PRIVACIDAD',
             'ruta_archivo'    => $data['archivo_temporal'],
-            'nombre_original' => 'Aviso_Privacidad_' . $record->interesado->nombre_completo . '.pdf',
+            'nombre_original' => 'Aviso_Privacidad_' . $nombreInteresado . '.pdf',
         ]);
 
         Notification::make()
