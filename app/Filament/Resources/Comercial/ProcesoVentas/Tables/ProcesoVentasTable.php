@@ -50,11 +50,19 @@ class ProcesoVentasTable
             TextColumn::make('interesado_id')
                 ->label('Cliente / Prospecto')
                 ->formatStateUsing(function (ProcesoVenta $record) {
-                    if ($record->interesado_type === 'App\\Models\\Prospecto') {
-                        return $record->interesado->nombre_completo . " (Prospecto)";
+
+                    $interesado = $record->interesado;
+
+                    // Protección contra registros huérfanos
+                    if (is_null($interesado)) {
+                        return 'Sin registro (' . class_basename($record->interesado_type) . ' #' . $record->interesado_id . ')';
                     }
 
-                    return $record->interesado->nombres . " " . $record->interesado->apellido_paterno . " (Cliente)";
+                    if ($record->interesado_type === 'App\\Models\\Prospecto') {
+                        return $interesado->nombre_completo . ' (Prospecto)';
+                    }
+
+                    return $interesado->nombres . ' ' . $interesado->apellido_paterno . ' (Cliente)';
                 })
                 ->icon('heroicon-m-user')
                 ->weight('bold'),
