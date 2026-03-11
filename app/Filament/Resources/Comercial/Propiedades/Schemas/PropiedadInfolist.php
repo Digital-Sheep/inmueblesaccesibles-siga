@@ -664,7 +664,7 @@ class PropiedadInfolist
                                             ->label('💬 Comentarios de Revisión')
                                             ->schema([
                                                 Grid::make(4)->schema([
-                                                    TextEntry::make('area')
+                                                    TextEntry::make('tipo_aprobador')
                                                         ->badge()
                                                         ->color(fn($state) => match ($state) {
                                                             'COMERCIAL' => 'info',
@@ -677,17 +677,17 @@ class PropiedadInfolist
                                                             default => $state,
                                                         }),
 
-                                                    TextEntry::make('aprobado')
+                                                    TextEntry::make('estatus')
                                                         ->label('Decisión')
                                                         ->badge()
-                                                        ->formatStateUsing(fn($state) => $state ? '✅ Aprobado' : '❌ Rechazado')
+                                                        ->formatStateUsing(fn($state) => $state == 'APROBADO' ? '✅ Aprobado' : '❌ Rechazado')
                                                         ->color(fn($state) => $state ? 'success' : 'danger'),
 
-                                                    TextEntry::make('usuario.name')
+                                                    TextEntry::make('aprobador.name')
                                                         ->label('Revisado por')
                                                         ->icon('heroicon-o-user'),
 
-                                                    TextEntry::make('created_at')
+                                                    TextEntry::make('updated_at')
                                                         ->label('Fecha')
                                                         ->date('d/M/Y H:i')
                                                         ->icon('heroicon-o-calendar'),
@@ -697,8 +697,7 @@ class PropiedadInfolist
                                                     ->label('Comentario')
                                                     ->placeholder('Sin comentarios')
                                                     ->columnSpanFull()
-                                                    ->color('gray')
-                                                    ->visible(fn($state) => $state !== null),
+                                                    ->color('gray'),
                                             ])
                                             ->columns(1)
                                             ->contained(false)
