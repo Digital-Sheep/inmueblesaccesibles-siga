@@ -6,6 +6,7 @@ use App\Filament\Actions\CalcularCotizacionAction;
 use App\Filament\Actions\ValidarYPublicarPropiedadAction;
 use App\Filament\Actions\EliminarCotizacionAction;
 use App\Filament\Actions\RecotizarAction;
+use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use App\Models\Propiedad;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -29,9 +30,9 @@ class PropiedadesTable
                 TextColumn::make('numero_credito')
                     ->label('Propiedad')
                     ->description(fn(Propiedad $record) => Str::limit($record->direccion_completa, 50))
+                    ->weight('bold')
                     ->searchable(['numero_credito', 'direccion_completa'])
                     ->sortable()
-                    ->weight('bold')
                     ->copyable()
                     ->copyMessage('ID copiado'),
 
@@ -52,11 +53,11 @@ class PropiedadesTable
                     ->badge()
                     ->label('Estatus Venta')
                     ->color(fn(string $state): string => match ($state) {
-                        'DISPONIBLE' => 'success', // Verde
-                        'APARTADA' => 'warning',   // Amarillo
-                        'VENDIDA' => 'info',       // Azul
+                        'DISPONIBLE' => 'success',
+                        'APARTADA' => 'warning',
+                        'VENDIDA' => 'info',
                         'BAJA', 'BORRADOR' => 'gray',
-                        'EN_REVISION' => 'danger', // Rojo
+                        'EN_REVISION' => 'danger',
                         default => 'gray',
                     }),
 
@@ -81,6 +82,8 @@ class PropiedadesTable
                 SelectFilter::make('estatus_comercial')
                     ->options([
                         'BORRADOR' => 'Borradores',
+                        'EN_PROCESO' => 'En Proceso',
+                        'EN_REVISION' => 'En Revisión',
                         'DISPONIBLE' => 'Disponibles',
                         'APARTADA' => 'Apartadas',
                         'VENDIDA' => 'Vendidas',
@@ -95,16 +98,23 @@ class PropiedadesTable
             ])
             ->recordUrl(null)
 
-            ->recordAction(ViewAction::class)
+            ->recordAction(null)
             ->recordActions([
                 ViewAction::make()
-                    ->modalHeading('Detalles de la propiedad')
-                    ->modalWidth('5xl')
-                    ->slideOver()
+                    ->url(fn($record) => PropiedadResource::getUrl('view', ['record' => $record]))
                     ->label('Ver Detalles')
                     ->icon('heroicon-o-eye')
                     ->button()
                     ->color('info'),
+
+                // ViewAction::make()
+                //     ->modalHeading('Detalles de la propiedad')
+                //     ->modalWidth('5xl')
+                //     ->slideOver()
+                //     ->label('Ver Detalles')
+                //     ->icon('heroicon-o-eye')
+                //     ->button()
+                //     ->color('info'),
 
                 ActionGroup::make([
 

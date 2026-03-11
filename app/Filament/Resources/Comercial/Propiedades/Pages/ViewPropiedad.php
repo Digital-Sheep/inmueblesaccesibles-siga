@@ -4,11 +4,13 @@ namespace App\Filament\Resources\Comercial\Propiedades\Pages;
 
 use App\Filament\Actions\AprobarPrecioAction;
 use App\Filament\Actions\CalcularCotizacionAction;
+use App\Filament\Actions\DecisionDGEAction;
 use App\Filament\Actions\DecisionFinalPrecioAction;
+use App\Filament\Actions\EliminarCotizacionAction;
 use App\Filament\Actions\RechazarPrecioAction;
+use App\Filament\Actions\RecotizarAction;
 use App\Filament\Actions\ValidarYPublicarPropiedadAction;
-use App\Filament\Resources\Comercial\Propiedades\Actions\EliminarCotizacionAction;
-use App\Filament\Resources\Comercial\Propiedades\Actions\RecotizarAction;
+use App\Filament\Clusters\Comercial\ComercialCluster;
 use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -18,14 +20,30 @@ class ViewPropiedad extends ViewRecord
 {
     protected static string $resource = PropiedadResource::class;
 
+    public function getTitle(): string
+    {
+        return "Propiedad #{$this->record->numero_credito}";
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ComercialCluster::getUrl() => 'Comercial',
+            PropiedadResource::getUrl('index') => 'Propiedades',
+            "#{$this->record->numero_credito}",
+        ];
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            // 1. EDITAR
             EditAction::make()
                 ->label('Editar Propiedad')
                 ->icon('heroicon-o-pencil')
                 ->color('gray')
+                ->slideOver()
+                ->modalWidth('5xl')
+                ->closeModalByClickingAway(false)
                 ->visible(
                     function () {
                         /** @var \App\Models\User $user */
@@ -52,7 +70,7 @@ class ViewPropiedad extends ViewRecord
             RechazarPrecioAction::make(),
 
             // 6. DECISIÓN FINAL (DGE)
-            DecisionFinalPrecioAction::make(),
+            DecisionDGEAction::make(),
         ];
     }
 }

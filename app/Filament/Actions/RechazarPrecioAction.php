@@ -2,6 +2,7 @@
 
 namespace App\Filament\Actions;
 
+use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use App\Models\AprobacionPrecio;
 use App\Models\Propiedad;
 use Filament\Actions\Action;
@@ -18,7 +19,7 @@ class RechazarPrecioAction
     public static function make(): Action
     {
         return Action::make('rechazar_precio')
-            ->label('❌ Rechazar Precio')
+            ->label('Rechazar Precio')
             ->icon('heroicon-o-x-circle')
             ->color('danger')
             ->requiresConfirmation()
@@ -111,7 +112,7 @@ class RechazarPrecioAction
                     ->send();
 
                 // Notificar a DGE
-                self::notificarDGE($record);
+                self::notificarDGE($record, $tipoAprobador, $precioAlternativo, $data['comentarios']);
             });
     }
 
@@ -153,7 +154,7 @@ class RechazarPrecioAction
     /**
      * Notificar a DGE que hay un precio que requiere decisión
      */
-    protected static function notificarDGE(Propiedad $record): void
+    protected static function notificarDGE(Propiedad $record, string $areaRechazo, float $precioSugerido, string $comentarios): void
     {
         // Obtener todos los usuarios con permiso de decisión final
         $usuariosDGE = \App\Models\User::permission('precios_decision_final')->get();
@@ -169,29 +170,40 @@ class RechazarPrecioAction
         foreach ($usuariosDGE as $usuario) {
             Notification::make()
                 ->title('⚠️ Precio Rechazado - Requiere tu Decisión')
-                ->body(sprintf(
-                    "La propiedad %s requiere tu decisión final.\n\n" .
-                        "Precio sugerido: $%s\n" .
-                        "Estado: Rechazado por una o más áreas",
-                    $record->numero_credito,
-                    number_format($record->precio_venta_con_descuento, 2)
-                ))
+                ->body(
+                    "{$areaRechazo} rechazó el precio de cotización.\n\n" .
+                        "Precio original: $" . number_format($record->precio_venta_sugerido, 2) . "\n" .
+                        "Precio sugerido por {$areaRechazo}: $" . number_format($precioSugerido, 2) . "\n\n" .
+                        "Comentario: {$comentarios}"
+                )
                 ->icon('heroicon-o-exclamation-triangle')
                 ->iconColor('warning')
                 ->actions([
-                    Action::make('ver')
+                    Action::make('ver_propiedad')
                         ->label('Ver Propiedad')
-                        ->url(\App\Filament\Resources\Comercial\Propiedades\PropiedadResource::getUrl('index'))
-                        ->button(),
+                        ->url(
+                            PropiedadResource::getUrl('view', ['record' => $record]),
+                            shouldOpenInNewTab: false
+                        )
+                        ->button()
+                        ->markAsRead(),
+
+                    Action::make('ver_widget')
+                        ->label('Ir a Decisiones')
+                        ->url('/comercial')
+                        ->button()
+                        ->color('warning')
+                        ->markAsRead(),
                 ])
                 ->persistent() // No se cierra automáticamente
                 ->sendToDatabase($usuario); // Guardar en base de datos
         }
 
         // Log adicional
-        Log::info("Precio rechazado - Notificación enviada a DGE", [
+        Log::info('Notificación DGE enviada', [
             'propiedad_id' => $record->id,
             'numero_credito' => $record->numero_credito,
+            'area_rechazo' => $areaRechazo,
             'usuarios_notificados' => $usuariosDGE->pluck('id')->toArray(),
         ]);
     }

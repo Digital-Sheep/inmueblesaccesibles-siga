@@ -345,7 +345,7 @@ class CalcularCotizacionAction
                 ->actions([
                     Action::make('revisar')
                         ->button()
-                        ->url(PropiedadResource::getUrl('index')),
+                        ->url(PropiedadResource::getUrl('view', ['record' => $record])),
                 ])
                 ->sendToDatabase($aprobadoresComercial);
         }
@@ -358,7 +358,7 @@ class CalcularCotizacionAction
                 ->actions([
                     Action::make('revisar')
                         ->button()
-                        ->url(PropiedadResource::getUrl('index')),
+                        ->url(PropiedadResource::getUrl('view', ['record' => $record])),
                 ])
                 ->sendToDatabase($aprobadoresContabilidad);
         }

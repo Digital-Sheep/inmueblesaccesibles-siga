@@ -18,8 +18,10 @@ class ListPropiedades extends ListRecords
             CreateAction::make()
                 ->label('Agregar propiedad')
                 ->closeModalByClickingAway(false)
+                ->modalWidth('5xl')
+                ->slideOver()
                 ->visible(
-                    function(): bool {
+                    function (): bool {
                         /** @var \App\Models\User  $user */
                         $user = Auth::user();
 

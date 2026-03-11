@@ -20,7 +20,7 @@ class DecisionFinalPrecioAction
     public static function make(): Action
     {
         return Action::make('decision_final_precio')
-            ->label('⚖️ Decisión Final')
+            ->label('Decisión Final')
             ->icon('heroicon-o-scale')
             ->color('warning')
             ->requiresConfirmation()

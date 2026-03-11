@@ -33,6 +33,7 @@ class PropiedadResource extends Resource
     protected static ?string $navigationLabel = 'Propiedades';
     protected static ?string $modelLabel = 'Propiedad';
     protected static ?string $pluralModelLabel = 'Propiedades';
+    protected static ?string $slug = 'propiedades';
 
     protected static ?string $cluster = ComercialCluster::class;
 
@@ -82,7 +83,7 @@ class PropiedadResource extends Resource
     {
         return [
             'index' => ListPropiedades::route('/'),
-            // 'view' => ViewPropiedad::route('/{record}'),
+            'view' => ViewPropiedad::route('/{record}'),
         ];
     }
 

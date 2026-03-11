@@ -86,7 +86,7 @@ class PreciosPendientesComercialWidget extends BaseWidget
                     ->color('info')
                     ->url(
                         fn(Propiedad $record) =>
-                        PropiedadResource::getUrl('index')
+                        PropiedadResource::getUrl('view', ['record' => $record])
                     ),
 
                 AprobarPrecioAction::make(),

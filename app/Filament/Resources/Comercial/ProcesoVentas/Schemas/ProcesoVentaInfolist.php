@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Comercial\ProcesoVentas\Schemas;
 
+use App\Filament\Resources\Comercial\Propiedades\PropiedadResource;
 use App\Models\ProcesoVenta;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -188,10 +189,14 @@ class ProcesoVentaInfolist
                         ->color('danger')
                         ->outlined()
                         ->visible(
-                            fn(ProcesoVenta $record) =>
-                            $record->estatus !== 'CANCELADO' &&
-                                $record->estatus !== 'ENTREGADO' &&
-                                Auth::user()->can('ventas_cancelar')
+                            function (ProcesoVenta $record) {
+                                /** @var \App\Models\User $user */
+                                $user = Auth::user();
+
+                                return $record->estatus !== 'CANCELADO' &&
+                                    $record->estatus !== 'ENTREGADO' &&
+                                    $user->can('ventas_cancelar');
+                            }
                         )
                         ->disabled(),
                 ])
@@ -363,7 +368,12 @@ class ProcesoVentaInfolist
                     ->schema([
                         TextEntry::make('propiedad.numero_credito')
                             ->label('Número de Crédito')
-                            ->weight(FontWeight::Bold),
+                            ->weight(FontWeight::Bold)
+                            ->url(fn($record) => $record->propiedad
+                                ? PropiedadResource::getUrl('view', ['record' => $record->propiedad])
+                                : null)
+                            ->color('primary')
+                            ->icon('heroicon-o-arrow-top-right-on-square'),
                         TextEntry::make('propiedad.estatus_comercial')
                             ->label('Estatus Comercial')
                             ->badge()
@@ -496,7 +506,12 @@ class ProcesoVentaInfolist
     {
         return Tab::make('Jurídico')
             ->icon('heroicon-m-scale')
-            ->visible(fn() => Auth::user()->can('ventas_ver_info_juridica'))
+            ->visible(function () {
+                /** @var \App\Models\User $user */
+                $user = Auth::user();
+
+                return $user->can('ventas_ver_info_juridica');
+            })
             ->schema([
                 Section::make('Dictaminación')
                     ->description('Información de seguimiento jurídico')

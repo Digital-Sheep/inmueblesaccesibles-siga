@@ -7,6 +7,7 @@ use App\Models\Propiedad;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Auth;
 
 class PreciosRequierenDecisionDGEWidget extends BaseWidget
 {
@@ -16,7 +17,10 @@ class PreciosRequierenDecisionDGEWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->can('precios_decision_final');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('precios_decision_final');
     }
 
     public function table(Table $table): Table
@@ -88,12 +92,14 @@ class PreciosRequierenDecisionDGEWidget extends BaseWidget
                             ? implode(' | ', $alternativas)
                             : 'Sin sugerencias';
                     })
-                    ->color(fn(Propiedad $record) =>
+                    ->color(
+                        fn(Propiedad $record) =>
                         $record->aprobacionesPrecio->whereNotNull('precio_sugerido_alternativo')->isNotEmpty()
                             ? 'info'
                             : 'gray'
                     )
-                    ->weight(fn(Propiedad $record) =>
+                    ->weight(
+                        fn(Propiedad $record) =>
                         $record->aprobacionesPrecio->whereNotNull('precio_sugerido_alternativo')->isNotEmpty()
                             ? 'medium'
                             : 'normal'

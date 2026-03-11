@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\RawJs;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 
@@ -22,22 +23,29 @@ class DecisionDGEAction
             ->label('Tomar decisión DGE')
             ->icon('heroicon-o-scale')
             ->color('warning')
-            ->visible(fn(Propiedad $record) =>
-                $record->precio_requiere_decision_dge &&
-                auth()->user()->can('precios_decision_final')
+            ->visible(
+                function (Propiedad $record) {
+                    /** @var \App\Models\User $user */
+                    $user = Auth::user();
+
+                    return $record->precio_requiere_decision_dge &&
+                        $user->can('precios_decision_final');
+                }
             )
-            ->modalHeading('⚖️ Decisión final DGE')
+            ->modalHeading('Decisión final DGE')
             ->modalDescription('Como DGE, tu decisión es final y resolverá el conflicto de aprobaciones.')
             ->modalWidth('3xl')
-            ->form([
+            ->schema([
                 // Mostrar información del conflicto
                 Placeholder::make('info_conflicto')
                     ->label('Situación Actual')
                     ->content(function (Propiedad $record) {
                         $comercial = $record->aprobacionesPrecio
                             ->firstWhere('tipo_aprobador', 'COMERCIAL');
+
                         $contabilidad = $record->aprobacionesPrecio
                             ->firstWhere('tipo_aprobador', 'CONTABILIDAD');
+
                         $precioOriginal = $record->precio_venta_con_descuento;
 
                         return view('filament.components.conflicto-aprobaciones', [
@@ -49,11 +57,12 @@ class DecisionDGEAction
 
                 // Opciones de decisión
                 Select::make('decision')
-                    ->label('Tu Decisión')
+                    ->label('¿Qué decisión tomas?')
                     ->options(function (Propiedad $record) {
+                        $precioOriginal = number_format($record->precio_venta_con_descuento, 2);
+
                         $options = [
-                            'aprobar_original' => '✅ Aprobar precio original ($' .
-                                number_format($record->precio_venta_con_descuento, 2) . ')',
+                            'aprobar_original' => '✅ Aprobar precio original ($' . $precioOriginal . ')',
                         ];
 
                         // Agregar opciones de precios sugeridos si existen
@@ -102,9 +111,9 @@ class DecisionDGEAction
 
                         $mensajes = [
                             'aprobar_original' => '✅ Se aprobará el precio calculado originalmente. La propiedad pasará a estado DISPONIBLE.',
-                            'aprobar_comercial' => '💡 Se usará el precio sugerido por Comercial. Se requerirá recotizar con este precio.',
-                            'aprobar_contabilidad' => '💡 Se usará el precio sugerido por Contabilidad. Se requerirá recotizar con este precio.',
-                            'precio_personalizado' => '🎯 Se usará el precio personalizado que establezcas. Se requerirá recotizar con este precio.',
+                            'aprobar_comercial' => '💡 Se usará el precio sugerido por Comercial. SE RECALCULARÁN TODOS LOS CAMPOS DE PRECIO.',
+                            'aprobar_contabilidad' => '💡 Se usará el precio sugerido por Contabilidad. SE RECALCULARÁN TODOS LOS CAMPOS DE PRECIO.',
+                            'precio_personalizado' => '🎯 Se usará el precio personalizado que establezcas. SE RECALCULARÁN TODOS LOS CAMPOS DE PRECIO.',
                             'rechazar_todo' => '❌ Se rechazarán todas las cotizaciones. La propiedad volverá a estado BORRADOR.',
                         ];
 
@@ -133,7 +142,9 @@ class DecisionDGEAction
                     DB::transaction(function () use ($record, $data) {
                         $decision = $data['decision'];
                         $comentarios = $data['comentarios_dge'];
-                        $user = auth()->user();
+
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
 
                         if ($decision === 'aprobar_original') {
                             // OPCIÓN 1: Aprobar precio original
@@ -160,58 +171,58 @@ class DecisionDGEAction
                                 ->title('✅ Precio original aprobado')
                                 ->body('La propiedad está ahora DISPONIBLE para venta.')
                                 ->send();
-
                         } elseif (str_starts_with($decision, 'aprobar_')) {
                             // OPCIÓN 2: Aprobar una de las sugerencias
                             $tipo = str_replace('aprobar_', '', $decision);
+
                             $aprobacion = $record->aprobacionesPrecio()
                                 ->where('tipo_aprobador', strtoupper($tipo))
                                 ->first();
 
                             if ($aprobacion && $aprobacion->precio_sugerido_alternativo) {
-                                $precioSugerido = $aprobacion->precio_sugerido_alternativo;
+                                $precioNuevo  = $aprobacion->precio_sugerido_alternativo;
 
-                                // Marcar que requiere acción manual
-                                $record->update([
-                                    'precio_requiere_decision_dge' => false,
-                                    'estatus_comercial' => 'BORRADOR', // Volver a borrador para recotizar
-                                ]);
+                                self::recalcularCamposPrecio($record, $precioNuevo, $comentarios, $user);
 
-                                // Desactivar cotizaciones actuales
-                                $record->cotizaciones()->update(['activa' => false]);
-                                $record->aprobacionesPrecio()->delete();
+                                // // Marcar que requiere acción manual
+                                // $record->update([
+                                //     'precio_requiere_decision_dge' => false,
+                                //     'estatus_comercial' => 'BORRADOR', // Volver a borrador para recotizar
+                                // ]);
+
+                                // // Desactivar cotizaciones actuales
+                                // $record->cotizaciones()->update(['activa' => false]);
+                                // $record->aprobacionesPrecio()->delete();
 
                                 Notification::make()
                                     ->warning()
                                     ->title('💡 Precio Sugerido Aprobado')
-                                    ->body("Por favor recotiza la propiedad con el precio: $" .
-                                        number_format($precioSugerido, 2))
+                                    ->body("Nuevo precio: $" . number_format($precioNuevo, 2) . ". Todos los campos han sido recalculados.")
                                     ->persistent()
                                     ->send();
                             }
-
                         } elseif ($decision === 'precio_personalizado') {
                             // OPCIÓN 3: Precio personalizado por DGE
                             $precioPersonalizado = floatval(str_replace(',', '', $data['precio_personalizado_monto']));
 
+                            self::recalcularCamposPrecio($record, $precioPersonalizado, $comentarios, $user);
+
                             // Marcar que requiere acción manual
-                            $record->update([
-                                'precio_requiere_decision_dge' => false,
-                                'estatus_comercial' => 'BORRADOR', // Volver a borrador para recotizar
-                            ]);
+                            // $record->update([
+                            //     'precio_requiere_decision_dge' => false,
+                            //     'estatus_comercial' => 'BORRADOR', // Volver a borrador para recotizar
+                            // ]);
 
                             // Desactivar cotizaciones actuales
-                            $record->cotizaciones()->update(['activa' => false]);
-                            $record->aprobacionesPrecio()->delete();
+                            // $record->cotizaciones()->update(['activa' => false]);
+                            // $record->aprobacionesPrecio()->delete();
 
                             Notification::make()
                                 ->warning()
                                 ->title('🎯 Precio personalizado establecido')
-                                ->body("Por favor recotiza la propiedad con el precio: $" .
-                                    number_format($precioPersonalizado, 2))
+                                ->body("Nuevo precio: $" . number_format($precioPersonalizado, 2) . ". Todos los campos han sido recalculados.")
                                 ->persistent()
                                 ->send();
-
                         } elseif ($decision === 'rechazar_todo') {
                             // OPCIÓN 3: Rechazar todo y volver a borrador
                             $record->update([
@@ -234,9 +245,7 @@ class DecisionDGEAction
                                 ->body('La propiedad ha vuelto a BORRADOR. Se debe recotizar desde cero.')
                                 ->send();
                         }
-
                     });
-
                 } catch (\Exception $e) {
                     Notification::make()
                         ->danger()
@@ -246,5 +255,56 @@ class DecisionDGEAction
                         ->send();
                 }
             });
+    }
+
+    protected static function recalcularCamposPrecio(Propiedad $record, float $precioNuevo, string $comentarios, $user): void
+    {
+        // Obtener la cotización activa para calcular proporciones
+        $cotizacionActiva = $record->cotizaciones()->where('activa', true)->first();
+
+        if (!$cotizacionActiva) {
+            throw new \Exception('No hay cotización activa para recalcular');
+        }
+
+        $precioConDescuentoOriginal = $cotizacionActiva->precio_venta_con_descuento;
+        $factorAjuste = $precioNuevo / $precioConDescuentoOriginal;
+
+        $precioSugeridoNuevo = $cotizacionActiva->precio_venta_sugerido * $factorAjuste;
+
+        $precioSinRemodelacionNuevo = $cotizacionActiva->precio_sin_remodelacion * $factorAjuste;
+
+        $porcentajeDescuento = $cotizacionActiva->porcentaje_descuento ?? 0;
+
+        // Actualizar la propiedad
+        $record->update([
+            'precio_venta_sugerido' => $precioSugeridoNuevo,
+            'precio_sin_remodelacion' => $precioSinRemodelacionNuevo,
+            'precio_venta_con_descuento' => $precioNuevo,
+            'porcentaje_descuento' => $porcentajeDescuento,
+            'precio_aprobado' => true,
+            'precio_fecha_aprobacion' => now(),
+            'precio_requiere_decision_dge' => false,
+            'estatus_comercial' => 'DISPONIBLE',
+        ]);
+
+        // Actualizar la cotización activa
+        $cotizacionActiva->update([
+            'precio_venta_sugerido' => $precioSugeridoNuevo,
+            'precio_sin_remodelacion' => $precioSinRemodelacionNuevo,
+            'precio_venta_con_descuento' => $precioNuevo,
+            'porcentaje_descuento' => $porcentajeDescuento,
+            'notas' => ($cotizacionActiva->notas ?? '') . "\n\n[DGE - {$user->name}] Precio ajustado: {$comentarios}",
+        ]);
+
+        // Marcar todas las aprobaciones como aprobadas
+        foreach ($record->aprobacionesPrecio as $aprobacion) {
+            $nuevoComentario = ($aprobacion->comentarios ? $aprobacion->comentarios . "\n\n" : '') .
+                "[DECISIÓN DGE - {$user->name}] Precio ajustado y aprobado: {$comentarios}";
+
+            $aprobacion->update([
+                'aprobado' => true,
+                'comentarios' => $nuevoComentario,
+            ]);
+        }
     }
 }

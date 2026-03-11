@@ -70,8 +70,13 @@ class ProcesoVentasTable
             TextColumn::make('propiedad.numero_credito')
                 ->label('Propiedad')
                 ->description(fn(ProcesoVenta $record) => Str::limit($record->propiedad->direccion_completa, 40))
-                ->searchable(),
-
+                ->searchable()
+                ->sortable()
+                ->url(fn($record) => $record->propiedad
+                    ? \App\Filament\Resources\Comercial\Propiedades\PropiedadResource::getUrl('view', ['record' => $record->propiedad])
+                    : null)
+                ->color('primary')
+                ->icon('heroicon-o-arrow-top-right-on-square'),
             TextColumn::make('estatus')
                 ->badge()
                 ->color(fn(string $state): string => self::getEstatusColor($state)),
