@@ -79,7 +79,7 @@ class ProcesoVentaForm
                         'propiedad',
                         'numero_credito',
                         fn($query) =>
-                        $query->whereIn('estatus_comercial', ['DISPONIBLE', 'EN_REVISION'])
+                        $query->whereIn('estatus_comercial', ['DISPONIBLE', 'EN_REVISION', 'EN_INTERES'])
                     )
                     ->getOptionLabelFromRecordUsing(fn(Propiedad $record) => $record->nombre_corto)
                     ->searchable()

@@ -38,7 +38,7 @@ class ProspectoInfolist
                             Select::make('propiedad_id')
                                 ->label('Propiedad')
                                 ->options(
-                                    Propiedad::where('estatus_comercial', 'DISPONIBLE')
+                                    Propiedad::whereIn('estatus_comercial', ['DISPONIBLE', 'EN_REVISION', 'EN_INTERES'])
                                         ->pluck('direccion_completa', 'id')
                                 )
                                 ->searchable()
@@ -59,12 +59,12 @@ class ProspectoInfolist
                                 'estatus' => 'ACTIVO',
                             ]);
 
-                            // Actualizar Prospecto
-                            $record->update(['estatus' => 'APARTADO']);
+                            // // Actualizar Prospecto
+                            // $record->update(['estatus' => 'APARTADO']);
 
-                            Propiedad::find($data['propiedad_id'])->update([
-                                'estatus_comercial' => 'EN_PROCESO',
-                            ]);
+                            // Propiedad::find($data['propiedad_id'])->update([
+                            //     'estatus_comercial' => 'EN_PROCESO',
+                            // ]);
 
                             Notification::make()->title('proceso iniciado correctamente')->success()->send();
 

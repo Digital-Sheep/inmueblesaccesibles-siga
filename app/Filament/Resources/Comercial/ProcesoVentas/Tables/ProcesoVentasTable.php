@@ -627,8 +627,8 @@ class ProcesoVentasTable
                 'fecha_cancelacion' => now(),
             ]);
 
-            // Liberar propiedad
-            $record->propiedad->update(['estatus_comercial' => 'DISPONIBLE']);
+            // // Liberar propiedad
+            // $record->propiedad->update(['estatus_comercial' => 'DISPONIBLE']);
         }
 
         Notification::make()
@@ -869,7 +869,7 @@ class ProcesoVentasTable
         ]);
 
         // Liberar propiedad
-        $record->propiedad->update(['estatus_comercial' => 'DISPONIBLE']);
+        // $record->propiedad->update(['estatus_comercial' => 'DISPONIBLE']);
 
         Notification::make()
             ->warning()
