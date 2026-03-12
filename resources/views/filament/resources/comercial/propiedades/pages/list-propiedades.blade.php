@@ -94,9 +94,9 @@
             <div
                 style="background:#fef3c7; border:1px solid #f59e0b; border-radius:6px; padding:12px; margin-bottom:16px; font-size:12px; font-family:monospace;">
                 filtroEstatus: "{{ $this->filtroEstatus }}" |
-                filtroTipo: "{{ $this->filtroTipo }}" |
-                filtroSucursal: {{ $this->filtroSucursal }} |
-                total: {{ $propiedades->total() }}
+                isEmpty: {{ $propiedades->isEmpty() ? 'SI' : 'NO' }} |
+                total: {{ $propiedades->total() }} |
+                count: {{ $propiedades->count() }}
             </div>
         @endif
 
