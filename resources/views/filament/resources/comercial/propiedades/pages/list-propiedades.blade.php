@@ -89,6 +89,17 @@
     @if ($this->vista === 'cards')
         @php $propiedades = $this->getPropiedades(); @endphp
 
+        {{-- DEBUG TEMPORAL --}}
+        @if (app()->environment('production') || true)
+            <div
+                style="background:#fef3c7; border:1px solid #f59e0b; border-radius:6px; padding:12px; margin-bottom:16px; font-size:12px; font-family:monospace;">
+                filtroEstatus: "{{ $this->filtroEstatus }}" |
+                filtroTipo: "{{ $this->filtroTipo }}" |
+                filtroSucursal: {{ $this->filtroSucursal }} |
+                total: {{ $propiedades->total() }}
+            </div>
+        @endif
+
         @if ($propiedades->isEmpty())
             <div
                 style="background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:48px; text-align:center;">
@@ -152,9 +163,8 @@
                 </p>
                 @if (count($marcadores) === 0)
                     <span style="font-size:12px; color:#d97706;">
-                        ⚠️ Ejecuta <code
-                            style="background:#f3f4f6; padding:2px 6px; border-radius:4px; font-family:monospace;">php
-                            artisan propiedades:geocodificar</code> para poblar coordenadas
+                        ⚠️ Ninguna propiedad tiene coordenadas asignadas con estos filtros. Edita las propiedades para
+                        agregar latitud y longitud.
                     </span>
                 @endif
             </div>
