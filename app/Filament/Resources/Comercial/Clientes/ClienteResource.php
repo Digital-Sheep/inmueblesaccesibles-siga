@@ -27,6 +27,7 @@ class ClienteResource extends Resource
     protected static ?string $modelLabel = 'Cliente';
     protected static ?string $pluralModelLabel = 'Cartera de Clientes';
     protected static ?string $navigationLabel = 'Mis Clientes';
+    protected static ?string $slug = 'clientes';
 
     protected static ?string $cluster = ComercialCluster::class;
 

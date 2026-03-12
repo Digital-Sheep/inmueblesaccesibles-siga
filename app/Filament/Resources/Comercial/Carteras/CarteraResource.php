@@ -31,6 +31,8 @@ class CarteraResource extends Resource
     protected static ?string $modelLabel = 'Cartera';
     protected static ?string $pluralModelLabel = 'Carga de Carteras';
     protected static ?string $navigationLabel = 'Cargar Cartera';
+    protected static ?string $slug = 'carteras';
+
 
     protected static ?string $cluster = ComercialCluster::class;
 

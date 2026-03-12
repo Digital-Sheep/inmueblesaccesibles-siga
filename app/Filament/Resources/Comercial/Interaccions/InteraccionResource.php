@@ -26,6 +26,7 @@ class InteraccionResource extends Resource
     protected static ?string $modelLabel = 'Interacción';
     protected static ?string $pluralModelLabel = 'Bitácora de Seguimiento';
     protected static ?string $navigationLabel = 'Seguimiento (Bitácora)';
+    protected static ?string $slug = 'seguimiento';
 
     protected static ?string $cluster = ComercialCluster::class;
 

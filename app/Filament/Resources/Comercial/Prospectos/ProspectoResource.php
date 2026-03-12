@@ -25,6 +25,8 @@ class ProspectoResource extends Resource
     protected static ?string $modelLabel = 'Prospecto';
     protected static ?string $pluralModelLabel = 'Prospectos';
     protected static ?string $navigationLabel = 'Mis Prospectos';
+    protected static ?string $slug = 'prospectos';
+
 
     protected static ?string $cluster = ComercialCluster::class;
 
@@ -53,7 +55,8 @@ class ProspectoResource extends Resource
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        return $user->can('prospectos_crear');}
+        return $user->can('prospectos_crear');
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -515,8 +515,6 @@ class PropiedadInfolist
                                                         ->size(TextSize::Medium)
                                                         ->weight(FontWeight::Bold)
                                                         ->color('warning')
-                                                        ->helperText('Precio base + costos totales'),
-
 
                                                 ]),
                                             ])

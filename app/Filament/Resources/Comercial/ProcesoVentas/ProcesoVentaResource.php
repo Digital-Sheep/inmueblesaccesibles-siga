@@ -32,6 +32,7 @@ class ProcesoVentaResource extends Resource
     protected static ?string $modelLabel = 'Proceso de Venta';
     protected static ?string $pluralModelLabel = 'Seguimiento de Ventas';
     protected static ?string $navigationLabel = 'Procesos de Venta';
+    protected static ?string $slug = 'procesos-venta';
 
     protected static ?string $cluster = ComercialCluster::class;
 

@@ -30,6 +30,7 @@ class EventoAgendaResource extends Resource
     protected static ?string $modelLabel = 'Evento';
     protected static ?string $pluralModelLabel = 'Agenda y Citas';
     protected static ?string $navigationLabel = 'Mi Agenda';
+    protected static ?string $slug = 'agenda';
 
     protected static ?string $cluster = ComercialCluster::class;
 
