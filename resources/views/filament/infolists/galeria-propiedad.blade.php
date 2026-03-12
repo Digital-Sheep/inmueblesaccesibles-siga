@@ -4,7 +4,7 @@
             @foreach ($getRecord()->archivos as $archivo)
                 @php
                     // Generar URL correcta según el disk configurado
-                    $disk = config('filament.default_filesystem_disk', 'public');
+                    $disk = config('public');
                     $imageUrl = $archivo->ruta_archivo
                         ? \Illuminate\Support\Facades\Storage::disk($disk)->url($archivo->ruta_archivo)
                         : null;

@@ -850,7 +850,7 @@ class PropiedadInfolist
                                             ->schema([
                                                 ImageEntry::make('ruta_archivo')
                                                     ->label('')
-                                                    ->disk(config('filament.default_filesystem_disk', 'public'))
+                                                    ->disk('public')
                                                     ->height(280)
                                                     ->width('100%')
                                                     ->extraImgAttributes([
