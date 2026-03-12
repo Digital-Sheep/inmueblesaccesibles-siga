@@ -68,8 +68,7 @@ class ListPropiedades extends ListRecords
     // Query para Cards y Mapa (independiente de la Tabla)
     // -------------------------------------------------------
 
-    #[Computed]
-    public function propiedades(): LengthAwarePaginator
+    public function getPropiedades(): LengthAwarePaginator
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
@@ -170,7 +169,6 @@ class ListPropiedades extends ListRecords
     {
         $this->vista   = $vista;
         $this->perPage = 12;
-        unset($this->propiedades);
         unset($this->propiedadesParaMapa);
 
         if ($vista === 'mapa') {
@@ -181,7 +179,7 @@ class ListPropiedades extends ListRecords
     public function updatedFiltroEstatus(): void
     {
         $this->perPage = 12;
-        unset($this->propiedades, $this->propiedadesParaMapa);
+        unset($this->propiedadesParaMapa);
     }
 
     public function updatedFiltroTipo(): void

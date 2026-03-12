@@ -87,7 +87,7 @@
 
     {{-- VISTA: CARDS --}}
     @if ($this->vista === 'cards')
-        @php $propiedades = $this->propiedades; @endphp
+        @php $propiedades = $this->getPropiedades(); @endphp
 
         @if ($propiedades->isEmpty())
             <div
