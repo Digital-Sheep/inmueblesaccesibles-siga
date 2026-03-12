@@ -59,13 +59,6 @@ class ProspectoInfolist
                                 'estatus' => 'ACTIVO',
                             ]);
 
-                            // // Actualizar Prospecto
-                            // $record->update(['estatus' => 'APARTADO']);
-
-                            // Propiedad::find($data['propiedad_id'])->update([
-                            //     'estatus_comercial' => 'EN_PROCESO',
-                            // ]);
-
                             Notification::make()->title('proceso iniciado correctamente')->success()->send();
 
                             return redirect()->to(

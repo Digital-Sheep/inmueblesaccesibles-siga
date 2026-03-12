@@ -6,6 +6,7 @@ use App\Models\CatEstado;
 use App\Models\CatMunicipio;
 use App\Models\Cartera;
 
+use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
@@ -25,6 +27,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class PropiedadForm
 {
@@ -34,7 +37,7 @@ class PropiedadForm
             ->columns(1)
             ->components([
                 Tabs::make('Detalles de la Propiedad')
-                    ->contained(false) // ✨ Mejora visual: tabs sin borde
+                    ->contained(false)
                     ->tabs([
 
                         // ========================================
@@ -89,43 +92,40 @@ class PropiedadForm
                                             ->label('Dirección Completa')
                                             ->rows(2)
                                             ->required()
-                                            ->placeholder('Ej: Av. Revolución 1500, Col. Guadalupe Inn')
+                                            ->placeholder('Ej: Av. Revolución 1500, Colonia Guadalupe Inn, CDMX')
                                             ->columnSpanFull(),
 
                                         Grid::make(3)->schema([
                                             Select::make('estado_id')
                                                 ->label('Estado')
-                                                ->options(CatEstado::all()->pluck('nombre', 'id'))
+                                                ->options(CatEstado::orderBy('nombre')->pluck('nombre', 'id'))
                                                 ->searchable()
                                                 ->native(false)
                                                 ->live()
-                                                ->afterStateUpdated(fn(Set $set) => $set('municipio_id', null))
-                                                ->prefixIcon('heroicon-o-map'),
+                                                ->afterStateUpdated(fn(Set $set) => $set('municipio_id', null)),
 
                                             Select::make('municipio_id')
                                                 ->label('Municipio / Alcaldía')
-                                                ->options(
-                                                    fn(Get $get) =>
-                                                    CatMunicipio::where('estado_id', $get('estado_id'))
-                                                        ->pluck('nombre', 'id')
-                                                )
+                                                ->options(function (Get $get) {
+                                                    $estadoId = $get('estado_id');
+                                                    if (! $estadoId) return [];
+                                                    return CatMunicipio::where('estado_id', $estadoId)
+                                                        ->orderBy('nombre')
+                                                        ->pluck('nombre', 'id');
+                                                })
                                                 ->searchable()
-                                                ->native(false)
-                                                ->disabled(fn(Get $get) => !$get('estado_id'))
-                                                ->prefixIcon('heroicon-o-building-office-2'),
+                                                ->native(false),
 
                                             TextInput::make('codigo_postal')
-                                                ->label('C.P.')
-                                                ->numeric()
-                                                ->maxLength(5)
-                                                ->placeholder('00000')
-                                                ->prefixIcon('heroicon-o-envelope'),
+                                                ->label('Código Postal')
+                                                ->maxLength(10)
+                                                ->placeholder('06600'),
                                         ]),
 
-                                        Grid::make(3)->schema([
+                                        Grid::make(4)->schema([
                                             TextInput::make('calle')
                                                 ->label('Calle')
-                                                ->columnSpan(3)
+                                                ->columnSpan(2)
                                                 ->placeholder('Av. Revolución'),
 
                                             TextInput::make('colonia')
@@ -142,13 +142,92 @@ class PropiedadForm
                                                 ->placeholder('Depto 3'),
                                         ]),
 
+                                        // ─── Google Maps + Botón de geocodificación ───
                                         TextInput::make('google_maps_link')
                                             ->label('Link de Google Maps')
                                             ->url()
                                             ->prefixIcon('heroicon-m-globe-alt')
-                                            ->placeholder('https://maps.google.com/...')
-                                            ->helperText('Opcional: Para localización en mapa')
-                                            ->columnSpanFull(),
+                                            ->placeholder('Pega el link y presiona "Procesar coordenadas" para extraerlas automáticamente.')
+                                            ->columnSpanFull()
+                                            ->suffixActions([
+                                                Action::make('geocodificar')
+                                                    ->label('Procesar coordenadas')
+                                                    ->color('info')
+                                                    ->button()
+                                                    ->action(function (Get $get, Set $set) {
+                                                        $link = $get('google_maps_link');
+
+                                                        if (! $link) {
+                                                            Notification::make()
+                                                                ->warning()
+                                                                ->title('Sin link')
+                                                                ->body('Ingresa primero el link de Google Maps.')
+                                                                ->send();
+                                                            return;
+                                                        }
+
+                                                        // Estrategia 1: extraer coordenadas del link directamente
+                                                        $coords = self::extraerCoordsDeLink($link);
+
+                                                        // Estrategia 2: si el link es corto (goo.gl / maps.app.goo.gl), seguir redirect
+                                                        if (! $coords && (str_contains($link, 'goo.gl') || str_contains($link, 'maps.app'))) {
+                                                            try {
+                                                                $response = Http::withOptions(['allow_redirects' => false])
+                                                                    ->timeout(5)
+                                                                    ->get($link);
+                                                                $location = $response->header('Location');
+                                                                if ($location) {
+                                                                    $coords = self::extraerCoordsDeLink($location);
+                                                                }
+                                                            } catch (\Throwable $e) {
+                                                                // silencioso
+                                                            }
+                                                        }
+
+                                                        // Estrategia 3: fallback Nominatim con dirección
+                                                        if (! $coords) {
+                                                            $coords = self::geocodificarConNominatim($get);
+                                                        }
+
+                                                        if ($coords) {
+                                                            $set('latitud', $coords['lat']);
+                                                            $set('longitud', $coords['lng']);
+
+                                                            Notification::make()
+                                                                ->success()
+                                                                ->title('✅ Coordenadas procesadas')
+                                                                ->body("Lat: {$coords['lat']}, Lng: {$coords['lng']}")
+                                                                ->send();
+                                                        } else {
+                                                            Notification::make()
+                                                                ->danger()
+                                                                ->title('No se pudieron obtener coordenadas')
+                                                                ->body('Verifica el link o ingresa las coordenadas manualmente.')
+                                                                ->send();
+                                                        }
+                                                    }),
+                                            ]),
+
+                                        // ─── Coordenadas (editables manualmente también) ───
+                                        Grid::make(2)->schema([
+                                            TextInput::make('latitud')
+                                                ->label('Latitud')
+                                                ->numeric()
+                                                ->step(0.00000001)
+                                                ->placeholder('20.6597')
+                                                ->prefixIcon('heroicon-o-arrows-up-down')
+                                                ->helperText('Se llena automáticamente al procesar el link.')
+                                                ->rules(['nullable', 'numeric', 'between:-90,90']),
+
+                                            TextInput::make('longitud')
+                                                ->label('Longitud')
+                                                ->numeric()
+                                                ->step(0.00000001)
+                                                ->placeholder('-103.3496')
+                                                ->prefixIcon('heroicon-o-arrows-right-left')
+                                                ->helperText('Se llena automáticamente al procesar el link.')
+                                                ->rules(['nullable', 'numeric', 'between:-180,180']),
+                                        ]),
                                     ])
                                     ->collapsible()
                                     ->columns(1),
@@ -178,215 +257,168 @@ class PropiedadForm
                                             TextInput::make('terreno_m2')
                                                 ->label('Terreno (m²)')
                                                 ->numeric()
-                                                ->suffix('m²')
-                                                ->placeholder('120')
-                                                ->prefixIcon('heroicon-o-square-3-stack-3d'),
+                                                ->step(0.01)
+                                                ->suffix('m²'),
 
                                             TextInput::make('construccion_m2')
                                                 ->label('Construcción (m²)')
                                                 ->numeric()
-                                                ->suffix('m²')
-                                                ->placeholder('85')
-                                                ->prefixIcon('heroicon-o-building-office'),
-                                        ]),
+                                                ->step(0.01)
+                                                ->suffix('m²'),
 
-                                        Grid::make(3)->schema([
                                             TextInput::make('habitaciones')
                                                 ->label('Habitaciones')
-                                                ->numeric()
-                                                ->default(0)
-                                                ->prefixIcon('heroicon-o-home')
-                                                ->placeholder('3'),
+                                                ->integer()
+                                                ->minValue(0),
 
                                             TextInput::make('banos')
                                                 ->label('Baños')
-                                                ->numeric()
-                                                ->default(0)
-                                                ->prefixIcon('heroicon-o-inbox')
-                                                ->placeholder('2'),
+                                                ->integer()
+                                                ->minValue(0),
 
                                             TextInput::make('estacionamientos')
                                                 ->label('Estacionamientos')
-                                                ->numeric()
-                                                ->default(0)
-                                                ->prefixIcon('heroicon-o-truck')
-                                                ->placeholder('1'),
+                                                ->integer()
+                                                ->minValue(0),
                                         ]),
                                     ])
-                                    ->collapsible()
                                     ->columns(1),
                             ]),
 
                         // ========================================
-                        // TAB 3: PRECIOS Y LEGAL 💰⚖️
+                        // TAB 3: DATOS LEGALES ⚖️
                         // ========================================
-                        Tab::make('Precios y Legal')
-                            ->icon('heroicon-o-currency-dollar')
+                        Tab::make('Datos Legales')
+                            ->icon('heroicon-o-scale')
                             ->schema([
-
-                                // SECCIÓN: Datos Financieros
-                                Section::make('💰 Datos Financieros')
-                                    ->description('Valores de referencia de la propiedad')
-                                    ->schema([
-                                        Grid::make(2)->schema([
-                                            TextInput::make('precio_lista')
-                                                ->label('Precio de Lista')
-                                                ->prefix('$')
-                                                ->numeric()
-                                                ->mask(RawJs::make('$money($input)'))
-                                                ->stripCharacters(',')
-                                                ->placeholder('850,000')
-                                                ->helperText('Precio en la administradora'),
-
-                                            TextInput::make('precio_valor_comercial')
-                                                ->label('Valor Comercial')
-                                                ->prefix('$')
-                                                ->numeric()
-                                                ->mask(RawJs::make('$money($input)'))
-                                                ->stripCharacters(',')
-                                                ->placeholder('1,200,000')
-                                                ->helperText('Valor de mercado actual'),
-                                        ]),
-
-                                        Grid::make(2)->schema([
-                                            TextInput::make('avaluo_banco')
-                                                ->label('Avalúo del Banco')
-                                                ->prefix('$')
-                                                ->numeric()
-                                                ->mask(RawJs::make('$money($input)'))
-                                                ->stripCharacters(',')
-                                                ->placeholder('600,000')
-                                                ->helperText('Avalúo reportado por la administradora'),
-
-                                            TextInput::make('cofinavit_monto')
-                                                ->label('COFINAVIT')
-                                                ->prefix('$')
-                                                ->numeric()
-                                                ->mask(RawJs::make('$money($input)'))
-                                                ->stripCharacters(',')
-                                                ->placeholder('150,000')
-                                                ->helperText('Subcuenta de vivienda (si aplica)'),
-                                        ]),
-                                    ])
-                                    ->collapsible()
-                                    ->columns(1),
-
-                                // SECCIÓN: Información Legal
                                 Section::make('⚖️ Información Legal')
-                                    ->description('Estado procesal y jurídico')
                                     ->schema([
                                         Grid::make(2)->schema([
                                             TextInput::make('etapa_judicial_reportada')
-                                                ->label('Etapa Judicial (Reporte)')
-                                                ->placeholder('Ej: Sentencia Firme')
-                                                ->helperText('Etapa reportada en documentos'),
-
-                                            TextInput::make('segunda_etapa')
-                                                ->label('Segunda Etapa / Detalle')
-                                                ->placeholder('Ej: En Adjudicación')
-                                                ->helperText('Información complementaria'),
-
-                                            Select::make('estatus_legal')
-                                                ->label('Estatus Legal (Sistema)')
-                                                ->options([
-                                                    'SIN_REVISAR' => '⏳ Sin Revisar',
-                                                    'R2_POSITIVO' => '✅ R2 - Positivo (Viable)',
-                                                    'R1_NEGATIVO' => '⚠️ R1 - Negativo (Requiere Cambio)',
-                                                    'LITIGIO' => '⚖️ En Litigio Activo',
-                                                    'ADJUDICADA' => '🏆 Adjudicada',
-                                                    'ESCRITURADA' => '📜 Escriturada',
-                                                ])
-                                                ->default('SIN_REVISAR')
-                                                ->disabled() // Solo lectura, cambia jurídico
-                                                ->dehydrated(true)
-                                                ->native(false)
-                                                ->helperText('Actualizado por el área jurídica'),
+                                                ->label('Etapa Judicial')
+                                                ->placeholder('Sentencia Firme'),
 
                                             TextInput::make('nombre_acreditado')
-                                                ->label('Nombre del Acreditado / Deudor')
-                                                ->maxLength(255)
-                                                ->placeholder('Datos sensibles')
-                                                ->visible(
-                                                    function () {
-                                                        /** @var \App\Models\User $user */
-                                                        $user = Auth::user();
-                                                        return $user && $user->can('propiedades_ver_datos_sensibles');
-                                                    }
-                                                ),
+                                                ->label('Nombre del Acreditado'),
+
+                                            TextInput::make('avaluo_banco')
+                                                ->label('Avalúo del Banco')
+                                                ->numeric()
+                                                ->prefix('$'),
+
+                                            TextInput::make('cofinavit_monto')
+                                                ->label('Monto COFINAVIT')
+                                                ->numeric()
+                                                ->prefix('$'),
                                         ]),
                                     ])
-                                    ->collapsible()
                                     ->columns(1),
                             ]),
 
                         // ========================================
-                        // TAB 4: GALERÍA 📸
+                        // TAB 4: FOTO 📷
                         // ========================================
-                        Tab::make('Galería')
+                        Tab::make('Foto')
                             ->icon('heroicon-o-photo')
                             ->schema([
-                                Section::make('📸 Fotos y Documentos')
-                                    ->description('Sube evidencias fotográficas y documentos de la propiedad')
+                                Section::make('📷 Imagen Principal')
                                     ->schema([
-                                        Repeater::make('archivos')
-                                            ->relationship()
-                                            ->label('')
-                                            ->schema([
-                                                Grid::make(2)->schema([
-                                                    FileUpload::make('ruta_archivo')
-                                                        ->label('Archivo / Foto')
-                                                        ->image()
-                                                        ->imageEditor()
-                                                        ->imageEditorAspectRatios([
-                                                            '16:9',
-                                                            '4:3',
-                                                            '1:1',
-                                                        ])
-                                                        ->directory('propiedades-fotos')
-                                                        ->storeFileNamesIn('nombre_original')
-                                                        ->required()
-                                                        ->maxSize(5120) // 5MB
-                                                        ->acceptedFileTypes(['image/*'])
-                                                        ->columnSpan(1),
-
-                                                    Group::make()->schema([
-                                                        Select::make('categoria')
-                                                            ->label('Categoría')
-                                                            ->options([
-                                                                'FACHADA' => '🏠 Fachada Principal',
-                                                                'INTERIOR' => '🛋️ Interiores',
-                                                                'PATIO' => '🌳 Patio / Jardín',
-                                                                'PLANO' => '🗺️ Plano / Croquis',
-                                                                'DAMAGE' => '⚠️ Daños / Reparaciones',
-                                                                'LEGAL' => '⚖️ Documento Legal',
-                                                            ])
-                                                            ->required()
-                                                            ->default('INTERIOR')
-                                                            ->native(false),
-
-                                                        Textarea::make('descripcion')
-                                                            ->label('Descripción')
-                                                            ->rows(2)
-                                                            ->placeholder('Describe qué se muestra en esta imagen...'),
-
-                                                        Hidden::make('tipo_mime')
-                                                            ->default('image/jpeg'),
-                                                    ])->columnSpan(1),
-                                                ]),
-                                            ])
-                                            ->grid(1)
-                                            ->defaultItems(0)
-                                            ->addActionLabel('➕ Subir nueva foto')
-                                            ->reorderableWithButtons()
-                                            ->collapsible()
-                                            ->cloneable()
-                                            ->itemLabel(fn(array $state): ?string => $state['categoria'] ?? 'Nueva foto'),
+                                        FileUpload::make('ruta_archivo')
+                                            ->label('Foto Principal')
+                                            ->disk('public')
+                                            ->directory('propiedades-fotos')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->maxSize(5120)
+                                            ->columnSpanFull(),
                                     ])
-                                    ->collapsible()
                                     ->columns(1),
                             ]),
-                    ])
-                    ->columnSpanFull(),
+                    ]),
             ]);
+    }
+
+    // ================================================================
+    // HELPERS PRIVADOS DE GEOCODIFICACIÓN
+    // ================================================================
+
+    /**
+     * Extrae latitud y longitud de un link de Google Maps usando regex.
+     * Soporta los formatos más comunes.
+     */
+    private static function extraerCoordsDeLink(string $link): ?array
+    {
+        $patterns = [
+            // @lat,lng,zoom  (formato estándar en URLs largas)
+            '/@(-?\d+\.?\d*),(-?\d+\.?\d*)/',
+            // ?q=lat,lng
+            '/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/',
+            // ?ll=lat,lng
+            '/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/',
+            // /place/.../@lat,lng
+            '/place\/[^@]+@(-?\d+\.?\d*),(-?\d+\.?\d*)/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $link, $matches)) {
+                $lat = (float) $matches[1];
+                $lng = (float) $matches[2];
+
+                // Validar rango plausible para México
+                if ($lat >= 14 && $lat <= 33 && $lng >= -118 && $lng <= -86) {
+                    return ['lat' => $lat, 'lng' => $lng];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Fallback: geocodificación con Nominatim (OpenStreetMap).
+     * No requiere API key. Límite: 1 req/seg (uso humano, OK).
+     */
+    private static function geocodificarConNominatim(Get $get): ?array
+    {
+        // Intentar con campos estructurados primero
+        $partes = array_filter([
+            $get('calle') . ' ' . $get('numero_exterior'),
+            $get('colonia'),
+            $get('municipio_borrador') ?: optional(\App\Models\CatMunicipio::find($get('municipio_id')))->nombre,
+            $get('estado_borrador') ?: optional(\App\Models\CatEstado::find($get('estado_id')))->nombre,
+            'México',
+        ]);
+
+        $query = implode(', ', $partes);
+
+        if (strlen(trim($query)) < 5) return null;
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'SIGA-InmuelesAccesibles/1.0',
+            ])
+                ->timeout(8)
+                ->get('https://nominatim.openstreetmap.org/search', [
+                    'q'              => $query,
+                    'format'         => 'json',
+                    'limit'          => 1,
+                    'countrycodes'   => 'mx',
+                ]);
+
+            $results = $response->json();
+
+            if (! empty($results)) {
+                $lat = (float) $results[0]['lat'];
+                $lng = (float) $results[0]['lon'];
+
+                if ($lat >= 14 && $lat <= 33 && $lng >= -118 && $lng <= -86) {
+                    return ['lat' => $lat, 'lng' => $lng];
+                }
+            }
+        } catch (\Throwable $e) {
+            // silencioso — el usuario verá la notificación de fallo
+        }
+
+        return null;
     }
 }

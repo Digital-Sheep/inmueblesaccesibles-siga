@@ -22,6 +22,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ProcesoVentasTable
@@ -626,9 +627,6 @@ class ProcesoVentasTable
                 'detalles_cancelacion' => 'No le gustó la propiedad en la visita',
                 'fecha_cancelacion' => now(),
             ]);
-
-            // // Liberar propiedad
-            // $record->propiedad->update(['estatus_comercial' => 'DISPONIBLE']);
         }
 
         Notification::make()
@@ -843,9 +841,11 @@ class ProcesoVentasTable
             'estatus' => 'ENTREGADO',
         ]);
 
-        // Convertir a cliente si aún es prospecto
         if ($record->interesado_type === 'App\\Models\\Prospecto') {
-            $record->interesado->update(['estatus' => 'CLIENTE']);
+            Log::warning('ProcesoVenta entregado con interesado tipo Prospecto — debería ser Cliente', [
+                'proceso_venta_id' => $record->id,
+                'interesado_id'    => $record->interesado_id,
+            ]);
         }
 
         Notification::make()
@@ -867,9 +867,6 @@ class ProcesoVentasTable
             'detalles_cancelacion' => $data['detalles_cancelacion'],
             'fecha_cancelacion' => now(),
         ]);
-
-        // Liberar propiedad
-        // $record->propiedad->update(['estatus_comercial' => 'DISPONIBLE']);
 
         Notification::make()
             ->warning()

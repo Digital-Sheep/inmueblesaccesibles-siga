@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Comercial\Propiedades\Schemas;
 
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -195,8 +196,34 @@ class PropiedadInfolist
                                             ->placeholder('No disponible')
                                             ->icon('heroicon-o-map-pin')
                                             ->color('primary')
-                                            ->weight(FontWeight::SemiBold)
+                                            ->weight(\Filament\Support\Enums\FontWeight::SemiBold)
                                             ->columnSpanFull(),
+
+                                        Grid::make(3)->schema([
+
+                                            TextEntry::make('latitud')
+                                                ->label('Latitud')
+                                                ->placeholder('Sin coordenadas')
+                                                ->icon('heroicon-o-arrows-up-down')
+                                                ->formatStateUsing(fn($state) => $state ? number_format((float)$state, 8) : null),
+
+                                            TextEntry::make('longitud')
+                                                ->label('Longitud')
+                                                ->placeholder('Sin coordenadas')
+                                                ->icon('heroicon-o-arrows-right-left')
+                                                ->formatStateUsing(fn($state) => $state ? number_format((float)$state, 8) : null),
+
+                                            IconEntry::make('tiene_coordenadas')
+                                                ->label('Geolocalizado')
+                                                ->icon(fn($record) => $record->latitud && $record->longitud
+                                                    ? 'heroicon-o-check-circle'
+                                                    : 'heroicon-o-x-circle')
+                                                ->color(fn($record) => $record->latitud && $record->longitud
+                                                    ? 'success'
+                                                    : 'danger')
+                                                ->getStateUsing(fn($record) => (bool)($record->latitud && $record->longitud)),
+
+                                        ])->columnSpanFull(),
                                     ])
                                     ->collapsible()
                                     ->columns(1),
