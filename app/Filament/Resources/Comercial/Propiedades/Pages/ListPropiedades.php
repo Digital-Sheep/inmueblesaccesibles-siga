@@ -169,6 +169,7 @@ class ListPropiedades extends ListRecords
     {
         $this->vista   = $vista;
         $this->perPage = 12;
+        $this->resetPage();
         unset($this->propiedadesParaMapa);
 
         if ($vista === 'mapa') {
@@ -179,19 +180,22 @@ class ListPropiedades extends ListRecords
     public function updatedFiltroEstatus(): void
     {
         $this->perPage = 12;
+        $this->resetPage();
         unset($this->propiedadesParaMapa);
     }
 
     public function updatedFiltroTipo(): void
     {
         $this->perPage = 12;
-        unset($this->propiedades, $this->propiedadesParaMapa);
+        $this->resetPage();
+        unset($this->propiedadesParaMapa);
     }
 
     public function updatedFiltroSucursal(): void
     {
         $this->perPage = 12;
-        unset($this->propiedades, $this->propiedadesParaMapa);
+        $this->resetPage();
+        unset($this->propiedadesParaMapa);
     }
 
     public function cargarMas(): void

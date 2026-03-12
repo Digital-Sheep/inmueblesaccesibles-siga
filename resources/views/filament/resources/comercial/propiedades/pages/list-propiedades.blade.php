@@ -89,17 +89,6 @@
     @if ($this->vista === 'cards')
         @php $propiedades = $this->getPropiedades(); @endphp
 
-        {{-- DEBUG TEMPORAL --}}
-        @if (app()->environment('production') || true)
-            <div
-                style="background:#fef3c7; border:1px solid #f59e0b; border-radius:6px; padding:12px; margin-bottom:16px; font-size:12px; font-family:monospace;">
-                filtroEstatus: "{{ $this->filtroEstatus }}" |
-                isEmpty: {{ $propiedades->isEmpty() ? 'SI' : 'NO' }} |
-                total: {{ $propiedades->total() }} |
-                count: {{ $propiedades->count() }}
-            </div>
-        @endif
-
         @if ($propiedades->isEmpty())
             <div
                 style="background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:48px; text-align:center;">
