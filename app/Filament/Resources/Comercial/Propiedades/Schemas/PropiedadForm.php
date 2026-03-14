@@ -288,7 +288,7 @@ class PropiedadForm
                         // ========================================
                         // TAB 3: DATOS LEGALES ⚖️
                         // ========================================
-                        Tab::make('Datos Legales')
+                        Tab::make('Precios y legal')
                             ->icon('heroicon-o-scale')
                             ->schema([
                                 Section::make('⚖️ Información Legal')
@@ -300,6 +300,11 @@ class PropiedadForm
 
                                             TextInput::make('nombre_acreditado')
                                                 ->label('Nombre del Acreditado'),
+
+                                            TextInput::make('precio_lista')
+                                                ->label('Precio de Lista')
+                                                ->numeric()
+                                                ->prefix('$'),
 
                                             TextInput::make('avaluo_banco')
                                                 ->label('Avalúo del Banco')

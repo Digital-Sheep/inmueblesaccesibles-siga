@@ -20,6 +20,8 @@ class ViewPropiedad extends ViewRecord
 {
     protected static string $resource = PropiedadResource::class;
 
+    protected static ?string $cluster = ComercialCluster::class;
+
     public function getTitle(): string
     {
         return "Propiedad #{$this->record->numero_credito}";

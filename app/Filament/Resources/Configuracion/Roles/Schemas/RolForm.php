@@ -426,6 +426,69 @@ class RolForm
                                                         }
                                                     }),
                                             ]),
+
+                                        Section::make('Contratos')
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->schema([
+                                                CheckboxList::make('contratos')
+                                                    ->label('Permisos de Contratos')
+                                                    ->options(self::getPermisosPorCategoria('contratos'))
+                                                    ->columns(3)
+                                                    ->gridDirection('row')
+                                                    ->bulkToggleable()
+                                                    ->live()
+                                                    ->afterStateHydrated(function (CheckboxList $component, $record) {
+                                                        if ($record) {
+                                                            $permisos = $record->permissions->pluck('name')->toArray();
+                                                            $opciones = array_keys(self::getPermisosPorCategoria('contratos'));
+                                                            $seleccionados = array_intersect($permisos, $opciones);
+                                                            $component->state($seleccionados);
+                                                        }
+                                                    }),
+                                            ]),
+
+                                        Section::make('Seguimiento de Juicios')
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->schema([
+                                                CheckboxList::make('seguimientojuicios')
+                                                    ->label('Permisos de seguimiento de juicios')
+                                                    ->options(self::getPermisosPorCategoria('seguimientojuicios'))
+                                                    ->columns(3)
+                                                    ->gridDirection('row')
+                                                    ->bulkToggleable()
+                                                    ->live()
+                                                    ->afterStateHydrated(function (CheckboxList $component, $record) {
+                                                        if ($record) {
+                                                            $permisos = $record->permissions->pluck('name')->toArray();
+                                                            $opciones = array_keys(self::getPermisosPorCategoria('seguimientojuicios'));
+                                                            $seleccionados = array_intersect($permisos, $opciones);
+                                                            $component->state($seleccionados);
+                                                        }
+                                                    }),
+                                            ]),
+
+                                        Section::make('Seguimiento de notarías')
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->schema([
+                                                CheckboxList::make('seguimientonotarias')
+                                                    ->label('Permisos de seguimiento de notarías')
+                                                    ->options(self::getPermisosPorCategoria('seguimientonotarias'))
+                                                    ->columns(3)
+                                                    ->gridDirection('row')
+                                                    ->bulkToggleable()
+                                                    ->live()
+                                                    ->afterStateHydrated(function (CheckboxList $component, $record) {
+                                                        if ($record) {
+                                                            $permisos = $record->permissions->pluck('name')->toArray();
+                                                            $opciones = array_keys(self::getPermisosPorCategoria('seguimientonotarias'));
+                                                            $seleccionados = array_intersect($permisos, $opciones);
+                                                            $component->state($seleccionados);
+                                                        }
+                                                    }),
+                                            ]),
                                     ]),
 
                                 // 💰 ADMINISTRATIVO
@@ -709,6 +772,8 @@ class RolForm
             'configuracion' => ['configuracion_'],
             'atencion' => ['atencion_'],
             'especiales' => ['autorizar_descuentos_'],
+            'seguimientonotarias' => ['seguimientonotarias_'],
+            'seguimientojuicios' => ['seguimientojuicios_'],
         ];
 
         if (!isset($prefijos[$categoria])) {
@@ -765,7 +830,9 @@ class RolForm
             'menu_',
             'dashboard_',
             'reportes_',
-            'autorizar_descuentos_'
+            'autorizar_descuentos_',
+            'seguimientonotarias_',
+            'seguimientojuicios_'
         ], '', $name);
 
         // Reemplaza guiones bajos por espacios
