@@ -60,9 +60,35 @@ class ListPropiedades extends ListRecords
                     /** @var \App\Models\User $user */
                     $user = Auth::user();
                     return $user->can('propiedades_crear');
+                })
+                ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
+                    // Extraer fotos antes de crear — no son columnas de propiedades
+                    $fotos = $data['fotos_repeater'] ?? [];
+                    unset($data['fotos_repeater']);
+
+                    $record = new $model();
+                    $record->fill($data);
+                    $record->save();
+
+                    foreach ($fotos as $foto) {
+                        if (empty($foto['ruta_archivo'])) {
+                            continue;
+                        }
+
+                        $record->archivos()->create([
+                            'categoria'       => $foto['categoria'] ?? 'FACHADA',
+                            'ruta_archivo'    => $foto['ruta_archivo'],
+                            'nombre_original' => basename($foto['ruta_archivo']),
+                            'descripcion'     => $foto['descripcion'] ?? null,
+                        ]);
+                    }
+
+                    return $record;
                 }),
         ];
     }
+
+
 
     // -------------------------------------------------------
     // Query para Cards y Mapa (independiente de la Tabla)

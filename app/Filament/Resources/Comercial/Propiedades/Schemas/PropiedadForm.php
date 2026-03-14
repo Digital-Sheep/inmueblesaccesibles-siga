@@ -323,21 +323,70 @@ class PropiedadForm
                         // ========================================
                         // TAB 4: FOTO 📷
                         // ========================================
-                        Tab::make('Foto')
+                        Tab::make('Fotos')
                             ->icon('heroicon-o-photo')
                             ->schema([
-                                Section::make('📷 Imagen Principal')
+                                Section::make('📷 Galería de Fotos')
+                                    ->description('Sube una o varias fotos. Selecciona la categoría de cada una.')
                                     ->schema([
-                                        FileUpload::make('ruta_archivo')
-                                            ->label('Foto Principal')
-                                            ->disk('public')
-                                            ->directory('propiedades-fotos')
-                                            ->image()
-                                            ->imageEditor()
-                                            ->maxSize(5120)
+                                        Repeater::make('fotos_repeater')
+                                            ->hiddenLabel()
+                                            ->schema([
+                                                Grid::make(1)->schema([
+                                                    FileUpload::make('ruta_archivo')
+                                                        ->label('Foto')
+                                                        ->disk('public')
+                                                        ->directory('propiedades-fotos')
+                                                        ->image()
+                                                        ->imageEditor()
+                                                        ->maxSize(5120)
+                                                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                                        ->required()
+                                                        ->fetchFileInformation(false)
+                                                        ->columnSpanFull(),
+
+                                                    Grid::make(2)->schema([
+                                                        Select::make('categoria')
+                                                            ->label('Categoría')
+                                                            ->options([
+                                                                'FACHADA'  => '🏠 Fachada',
+                                                                'INTERIOR' => '🛋️ Interior',
+                                                                'PATIO'    => '🌿 Patio / Jardín',
+                                                                'PLANO'    => '📐 Plano',
+                                                                'LEGAL'    => '📄 Documento Legal',
+                                                                'DAMAGE'   => '⚠️ Daño / Deterioro',
+                                                            ])
+                                                            ->required()
+                                                            ->default('FACHADA')
+                                                            ->native(false),
+
+                                                        Textarea::make('descripcion')
+                                                            ->label('Descripción (opcional)')
+                                                            ->rows(2)
+                                                            ->maxLength(500),
+                                                    ]),
+                                                ]),
+                                            ])
+                                            ->addActionLabel('+ Agregar foto')
+                                            ->reorderable()
+                                            ->collapsible()
+                                            ->itemLabel(
+                                                fn(array $state): ?string =>
+                                                isset($state['categoria'])
+                                                    ? match ($state['categoria']) {
+                                                        'FACHADA'  => '🏠 Fachada',
+                                                        'INTERIOR' => '🛋️ Interior',
+                                                        'PATIO'    => '🌿 Patio / Jardín',
+                                                        'PLANO'    => '📐 Plano',
+                                                        'LEGAL'    => '📄 Documento Legal',
+                                                        'DAMAGE'   => '⚠️ Daño / Deterioro',
+                                                        default    => $state['categoria'],
+                                                    }
+                                                    : 'Nueva foto'
+                                            )
+                                            ->defaultItems(0)
                                             ->columnSpanFull(),
-                                    ])
-                                    ->columns(1),
+                                    ]),
                             ]),
                     ]),
             ]);

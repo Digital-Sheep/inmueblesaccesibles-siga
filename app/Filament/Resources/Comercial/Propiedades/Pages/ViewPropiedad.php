@@ -46,14 +46,50 @@ class ViewPropiedad extends ViewRecord
                 ->slideOver()
                 ->modalWidth('5xl')
                 ->closeModalByClickingAway(false)
-                ->visible(
-                    function () {
-                        /** @var \App\Models\User $user */
-                        $user = Auth::user();
+                ->visible(function () {
+                    /** @var \App\Models\User $user */
+                    $user = Auth::user();
+                    return $user->can('propiedades_editar');
+                })
 
-                        return $user->can('propiedades_editar');
+                ->mutateRecordDataUsing(function (array $data): array {
+                    $fotos = $this->record->archivos()
+                        ->whereIn('categoria', ['FACHADA', 'INTERIOR', 'PATIO', 'PLANO', 'LEGAL', 'DAMAGE'])
+                        ->get()
+                        ->map(fn($archivo) => [
+                            'ruta_archivo' => $archivo->ruta_archivo, // ← ruta completa, no basename
+                            'categoria'    => $archivo->categoria,
+                            'descripcion'  => $archivo->descripcion,
+                        ])
+                        ->toArray();
+
+                    $data['fotos_repeater'] = $fotos;
+
+                    return $data;
+                })
+
+                ->after(function ($record, array $data): void {
+                    if (empty($data['fotos_repeater'])) {
+                        return;
                     }
-                ),
+
+                    $record->archivos()
+                        ->whereIn('categoria', ['FACHADA', 'INTERIOR', 'PATIO', 'PLANO', 'LEGAL', 'DAMAGE'])
+                        ->delete();
+
+                    foreach ($data['fotos_repeater'] as $foto) {
+                        if (empty($foto['ruta_archivo'])) {
+                            continue;
+                        }
+
+                        $record->archivos()->create([
+                            'categoria'       => $foto['categoria'] ?? 'FACHADA',
+                            'ruta_archivo'    => $foto['ruta_archivo'],
+                            'nombre_original' => basename($foto['ruta_archivo']),
+                            'descripcion'     => $foto['descripcion'] ?? null,
+                        ]);
+                    }
+                }),
 
             // 2. CALCULAR PRECIO
             CalcularCotizacionAction::make(),

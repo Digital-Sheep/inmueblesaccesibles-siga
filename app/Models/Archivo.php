@@ -15,13 +15,17 @@ class Archivo extends Model
     protected $table = 'archivos';
 
     protected $fillable = [
-        'entidad_type', // Cliente, Propiedad, Expediente
+        'entidad_type',
         'entidad_id',
-        'categoria', // INE, SENTENCIA, FOTO
+        'categoria',
         'ruta_archivo',
         'nombre_original',
-        'mime_type',
-        'created_by', // En este caso actúa como "subido_por"
+        'tipo_mime',
+        'peso_kb',
+        'descripcion',
+        'subido_por_id',
+        'created_by',
+        'updated_by',
     ];
 
     // --- RELACIONES ---
@@ -42,14 +46,29 @@ class Archivo extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function creadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     protected static function boot()
     {
         parent::boot();
 
-        static::creating(function ($archivo) {
-            if (!$archivo->subido_por_id) {
-                $archivo->subido_por_id = Auth::id();
+        static::creating(function (Archivo $archivo) {
+            $userId = Auth::id();
+
+            if (! $archivo->subido_por_id) {
+                $archivo->subido_por_id = $userId;
             }
+
+            if (! $archivo->created_by) {
+                $archivo->created_by = $userId;
+            }
+        });
+
+        static::updating(function (Archivo $archivo) {
+            $archivo->updated_by = Auth::id();
         });
     }
 }
