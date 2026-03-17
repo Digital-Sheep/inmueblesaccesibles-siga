@@ -11,6 +11,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Illuminate\Support\Facades\Auth;
 
 class SeguimientoJuicioInfolist
 {
@@ -71,6 +72,15 @@ class SeguimientoJuicioInfolist
                                         IconEntry::make('activo')
                                             ->label('Activo')
                                             ->boolean(),
+
+                                        TextEntry::make('ultima_actuacion_at')
+                                            ->label('Última Actuación')
+                                            ->formatStateUsing(
+                                                fn($state, $record) => $record->ultima_actuacion_at
+                                                    ? $record->ultima_actuacion_at->format('d/m/Y')
+                                                    : 'Sin actuaciones'
+                                            )
+                                            ->color(fn($record) => $record->esta_rezagado ? 'danger' : 'success'),
                                     ]),
                                 ]),
                         ]),
@@ -153,7 +163,12 @@ class SeguimientoJuicioInfolist
                                         ->label('Notas Director / UCP')
                                         ->default('—')
                                         ->columnSpanFull()
-                                        ->visible(fn() => auth()->user()->can('seguimientojuicios_ver_todos')),
+                                        ->visible(function () {
+                                            /** @var \App\Models\User $user */
+                                            $user = Auth::user();
+
+                                            return $user->can('seguimientojuicios_ver_todos');
+                                        }),
                                 ]),
                         ]),
                 ])

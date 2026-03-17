@@ -2,32 +2,25 @@
 
 namespace App\Filament\Resources\Juridico\SeguimientoNotarias;
 
-use App\Enums\SedeJuicioEnum;
 use App\Filament\Clusters\Juridico\JuridicoCluster;
 use App\Filament\Resources\Juridico\SeguimientoNotarias\Pages\CreateSeguimientoNotaria;
 use App\Filament\Resources\Juridico\SeguimientoNotarias\Pages\EditSeguimientoNotaria;
 use App\Filament\Resources\Juridico\SeguimientoNotarias\Pages\ListSeguimientoNotarias;
 use App\Filament\Resources\Juridico\SeguimientoNotarias\Pages\ViewSeguimientoNotaria;
 use App\Filament\Resources\Juridico\SeguimientoNotarias\Schemas\SeguimientoNotariaForm;
+use App\Filament\Resources\Juridico\SeguimientoNotarias\Tables\SeguimientosNotariaTable;
 use App\Models\SeguimientoNotaria;
 use BackedEnum;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class SeguimientoNotariaResource extends Resource
 {
@@ -36,6 +29,8 @@ class SeguimientoNotariaResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?string $cluster = JuridicoCluster::class;
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Seguimiento de Notarías';
 
@@ -49,23 +44,35 @@ class SeguimientoNotariaResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('seguimientonotarias_ver');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('seguimientonotarias_ver');
     }
 
-    // public static function canCreate(): bool
-    // {
-    //     return auth()->user()->can('seguimientonotarias_crear');
-    // }
+    public static function canCreate(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
-    // public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
-    // {
-    //     return auth()->user()->can('seguimientonotarias_editar');
-    // }
+        return $user->can('seguimientonotarias_crear');
+    }
 
-    // public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
-    // {
-    //     return auth()->user()->can('seguimientonotarias_eliminar');
-    // }
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('seguimientonotarias_editar');
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('seguimientonotarias_eliminar');
+    }
 
     // ── Query base ─────────────────────────────────────────────────────────────
 
@@ -77,14 +84,12 @@ class SeguimientoNotariaResource extends Resource
             ->withCount('actuaciones');
     }
 
-    // ── Form ───────────────────────────────────────────────────────────────────
+    // ── Schemas ────────────────────────────────────────────────────────────────
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components(SeguimientoNotariaForm::schema());
     }
-
-    // ── Infolist ───────────────────────────────────────────────────────────────
 
     public static function infolist(Schema $schema): Schema
     {
@@ -110,11 +115,17 @@ class SeguimientoNotariaResource extends Resource
                         ->label('Etapa Actual')
                         ->default('Sin información')
                         ->columnSpanFull(),
+
                     TextEntry::make('notas_director')
                         ->label('Notas Director / UCP')
                         ->default('—')
                         ->columnSpanFull()
-                        ->visible(fn() => auth()->user()->can('seguimientonotarias_ver_todos')),
+                        ->visible(function () {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('seguimientonotarias_ver_todos');
+                        }),
                 ]),
         ]);
     }
@@ -123,73 +134,7 @@ class SeguimientoNotariaResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                TextColumn::make('id_garantia')
-                    ->label('ID Garantía')
-                    ->searchable()
-                    ->default('—'),
-
-                TextColumn::make('numero_credito')
-                    ->label('Núm. Crédito')
-                    ->searchable()
-                    ->default('—'),
-
-                TextColumn::make('nombre_cliente')
-                    ->label('Cliente')
-                    ->searchable()
-                    ->default('Sin cliente')
-                    ->limit(30),
-
-                TextColumn::make('sede')
-                    ->label('Sede')
-                    ->badge()
-                    ->sortable(),
-
-                TextColumn::make('notario')
-                    ->label('Notario')
-                    ->limit(25)
-                    ->default('—'),
-
-                TextColumn::make('numero_escritura')
-                    ->label('Escritura')
-                    ->default('—'),
-
-                TextColumn::make('fecha_escritura')
-                    ->label('Fecha Escritura')
-                    ->date('d/m/Y')
-                    ->default('—'),
-
-                TextColumn::make('actuaciones_count')
-                    ->label('Actuaciones')
-                    ->badge()
-                    ->color('info')
-                    ->sortable(),
-
-                IconColumn::make('activo')
-                    ->label('Activo')
-                    ->boolean()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                SelectFilter::make('sede')
-                    ->label('Sede')
-                    ->options(SedeJuicioEnum::class)
-                    ->multiple(),
-
-                TernaryFilter::make('activo')
-                    ->label('Solo Activos')
-                    ->default(true),
-            ])
-            ->actions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
-            ])
-            ->emptyStateHeading('Sin seguimientos de notarías')
-            ->emptyStateIcon('heroicon-o-document-text');
+        return SeguimientosNotariaTable::configure($table);
     }
 
     // ── Relation Managers ──────────────────────────────────────────────────────

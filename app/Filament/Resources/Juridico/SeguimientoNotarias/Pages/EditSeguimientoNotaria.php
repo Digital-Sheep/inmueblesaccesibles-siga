@@ -1,13 +1,23 @@
 <?php
+
 namespace App\Filament\Resources\Juridico\SeguimientoNotarias\Pages;
+
 use App\Filament\Resources\Juridico\SeguimientoNotarias\SeguimientoNotariaResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
-class EditSeguimientoNotaria extends EditRecord {
+
+class EditSeguimientoNotaria extends EditRecord
+{
     protected static string $resource = SeguimientoNotariaResource::class;
-    protected function getHeaderActions(): array { return [ViewAction::make(), DeleteAction::make()]; }
-    protected function getRedirectUrl(): string {
+
+    protected function getHeaderActions(): array
+    {
+        return [ViewAction::make(), DeleteAction::make()];
+    }
+
+    protected function getRedirectUrl(): string
+    {
         return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
     }
 }

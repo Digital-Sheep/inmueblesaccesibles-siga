@@ -30,13 +30,15 @@ class SeguimientoNotaria extends Model
         'etapa_actual',
         'notas_director',
         'activo',
+        'ultima_actuacion_at',
     ];
 
     protected $casts = [
-        'sede'               => SedeJuicioEnum::class,
-        'fecha_escritura'    => 'date',
+        'sede'                => SedeJuicioEnum::class,
+        'fecha_escritura'     => 'date',
         'hay_cesion_derechos' => 'boolean',
-        'activo'             => 'boolean',
+        'activo'              => 'boolean',
+        'ultima_actuacion_at' => 'datetime',
     ];
 
     // ── Relaciones ─────────────────────────────────────────────────────────────
@@ -56,8 +58,29 @@ class SeguimientoNotaria extends Model
 
     public function getTituloAttribute(): string
     {
-        return $this->id_garantia
-            ?? $this->numero_credito
-            ?? "Notaría #{$this->id}";
+        $sede   = $this->sede instanceof SedeJuicioEnum ? $this->sede->getLabel() : null;
+        $partes = array_filter([$sede, $this->nombre_cliente ?? $this->id_garantia ?? $this->numero_credito]);
+
+        return ! empty($partes)
+            ? implode(' — ', $partes)
+            : "Notaría #{$this->id}";
+    }
+
+    public function getDiasSinActuacionAttribute(): ?int
+    {
+        if (! $this->ultima_actuacion_at) {
+            return null;
+        }
+
+        return (int) $this->ultima_actuacion_at->diffInDays(now());
+    }
+
+    public function getEstaRezagadoAttribute(): bool
+    {
+        if (! $this->ultima_actuacion_at) {
+            return true;
+        }
+
+        return $this->ultima_actuacion_at->diffInDays(now()) > 7;
     }
 }

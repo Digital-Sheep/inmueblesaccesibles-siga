@@ -15,6 +15,7 @@ class ActuacionNotaria extends Model
         'seguimiento_notaria_id',
         'fecha_actuacion',
         'descripcion_actuacion',
+        'etapa_actual',
         'archivo_evidencia',
         'hubo_avance',
         'semana_label',

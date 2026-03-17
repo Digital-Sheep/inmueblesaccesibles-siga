@@ -43,15 +43,17 @@ class SeguimientoJuicio extends Model
         'notas_director',
         'sin_demanda',
         'activo',
+        'ultima_actuacion_at',
     ];
 
     protected $casts = [
-        'nivel_prioridad'    => NivelPrioridadJuicioEnum::class,
-        'tipo_proceso'       => TipoProcesoJuicioEnum::class,
-        'sede'               => SedeJuicioEnum::class,
+        'nivel_prioridad'     => NivelPrioridadJuicioEnum::class,
+        'tipo_proceso'        => TipoProcesoJuicioEnum::class,
+        'sede'                => SedeJuicioEnum::class,
         'hay_cesion_derechos' => 'boolean',
-        'sin_demanda'        => 'boolean',
-        'activo'             => 'boolean',
+        'sin_demanda'         => 'boolean',
+        'activo'              => 'boolean',
+        'ultima_actuacion_at' => 'datetime',
     ];
 
     // ── Relaciones ─────────────────────────────────────────────────────────────
@@ -78,13 +80,42 @@ class SeguimientoJuicio extends Model
     // ── Accessors de utilidad ──────────────────────────────────────────────────
 
     /**
-     * Etiqueta para mostrar en el título del recurso.
+     * Etiqueta descriptiva para breadcrumb y recordTitleAttribute.
+     * Formato: "[SEDE] - [Cliente]" con fallbacks progresivos.
      */
     public function getTituloAttribute(): string
     {
-        return $this->id_garantia
-            ?? $this->numero_credito
-            ?? "Juicio #{$this->id}";
+        $sede   = $this->sede instanceof SedeJuicioEnum ? $this->sede->getLabel() : null;
+        $partes = array_filter([$sede, $this->nombre_cliente ?? $this->id_garantia ?? $this->numero_credito]);
+
+        return ! empty($partes)
+            ? implode(' — ', $partes)
+            : "Juicio #{$this->id}";
+    }
+
+    /**
+     * Días transcurridos desde la última actuación registrada.
+     * Null si nunca ha tenido actuaciones.
+     */
+    public function getDiasSinActuacionAttribute(): ?int
+    {
+        if (! $this->ultima_actuacion_at) {
+            return null;
+        }
+
+        return (int) $this->ultima_actuacion_at->diffInDays(now());
+    }
+
+    /**
+     * Indica si el juicio está rezagado (>7 días sin actuación).
+     */
+    public function getEstaRezagadoAttribute(): bool
+    {
+        if (! $this->ultima_actuacion_at) {
+            return true; // Sin ninguna actuación = rezagado
+        }
+
+        return $this->ultima_actuacion_at->diffInDays(now()) > 7;
     }
 
     /**

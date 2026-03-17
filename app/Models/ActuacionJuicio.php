@@ -15,6 +15,7 @@ class ActuacionJuicio extends Model
         'seguimiento_juicio_id',
         'fecha_actuacion',
         'descripcion_actuacion',
+        'etapa_actual',
         'archivo_evidencia',
         'hubo_avance',
         'semana_label',

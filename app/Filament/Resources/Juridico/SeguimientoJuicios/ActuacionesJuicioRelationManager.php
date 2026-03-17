@@ -19,6 +19,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class ActuacionesJuicioRelationManager extends RelationManager
 {
@@ -28,7 +29,10 @@ class ActuacionesJuicioRelationManager extends RelationManager
 
     public function canCreate(): bool
     {
-        return auth()->user()->can('seguimientojuicios_editar');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('seguimientojuicios_editar');
     }
 
     /**
@@ -43,47 +47,46 @@ class ActuacionesJuicioRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
-        return $schema->components([
-            DatePicker::make('fecha_actuacion')
-                ->label('Fecha de Actuación')
-                ->required()
-                ->default(now())
-                ->native(false),
+        return $schema
+            ->columns(1)
+            ->components([
+                DatePicker::make('fecha_actuacion')
+                    ->label('Fecha de Actuación')
+                    ->required()
+                    ->default(now())
+                    ->native(false),
 
-            Textarea::make('descripcion_actuacion')
-                ->label('Descripción de la Actuación')
-                ->required()
-                ->rows(4)
-                ->helperText('Registra la evidencia o avance del caso (último acuerdo, boletín, etc.)'),
+                Textarea::make('descripcion_actuacion')
+                    ->label('Descripción')
+                    ->required()
+                    ->rows(3)
+                    ->helperText('Registra la evidencia o avance del caso (último acuerdo, boletín, etc.)'),
 
-            // Disco 'private' explícito — archivos jurídicos sensibles
-            // Estructura: juridico/juicios/{id_garantia}/actuaciones/{año}-{mes}/
-            FileUpload::make('archivo_evidencia')
-                ->label('Archivo de Evidencia / Boletín Judicial')
-                ->disk('private')
-                ->directory(function () {
-                    $idGarantia = $this->getOwnerRecord()->id_garantia
-                        ?? 'sin-garantia-' . $this->getOwnerRecord()->id;
+                Textarea::make('etapa_actual')
+                    ->label('¿Cambia la etapa procesal? (opcional)')
+                    ->rows(2)
+                    ->helperText('Si se llena, actualiza automáticamente la etapa del seguimiento'),
 
-                    return ActuacionJuicio::directorioParaJuicio($idGarantia);
-                })
-                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
-                ->maxSize(10240) // 10 MB
-                ->preserveFilenames(false)
-                ->helperText('PDF o imagen. Máx. 10MB. Se guarda en disco privado.')
-                ->nullable(),
+                Select::make('hubo_avance')
+                    ->label('¿Hubo avance?')
+                    ->options(EstatusAvanceEnum::class)
+                    ->required(),
 
-            Select::make('hubo_avance')
-                ->label('¿Hubo Avance?')
-                ->options(EstatusAvanceEnum::class)
-                ->required(),
+                FileUpload::make('archivo_evidencia')
+                    ->label('Evidencia (opcional)')
+                    ->disk('private')
+                    ->directory(function () {
+                        $idGarantia = $this->getOwnerRecord()->id_garantia
+                            ?? 'sin-garantia-' . $this->getOwnerRecord()->id;
 
-            TextInput::make('semana_label')
-                ->label('Etiqueta de Semana')
-                ->placeholder('SEMANA 16/02/2026')
-                ->maxLength(50)
-                ->helperText('Opcional — referencia visual para identificar la semana'),
-        ]);
+                        return ActuacionJuicio::directorioParaJuicio($idGarantia);
+                    })
+                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
+                    ->maxSize(10240)
+                    ->preserveFilenames(false)
+                    ->helperText('PDF o imagen. Máx. 10MB.')
+                    ->nullable(),
+            ]);
     }
 
     public function table(Table $table): Table
@@ -107,21 +110,22 @@ class ActuacionesJuicioRelationManager extends RelationManager
                 TextColumn::make('descripcion_actuacion')
                     ->label('Actuación')
                     ->limit(80)
-                    ->tooltip(fn ($record) => $record->descripcion_actuacion),
+                    ->tooltip(fn($record) => $record->descripcion_actuacion),
 
                 TextColumn::make('id')
                     ->label('Evidencia')
-                    ->formatStateUsing(fn ($state, $record) => $record->nombre_archivo ?? 'Sin archivo')
+                    ->formatStateUsing(fn($state, $record) => $record->nombre_archivo ?? 'Sin archivo')
                     ->badge()
-                    ->color(fn ($record) => $record->archivo_evidencia ? 'info' : 'gray'),
+                    ->color(fn($record) => $record->archivo_evidencia ? 'info' : 'gray'),
 
                 TextColumn::make('hubo_avance')
-                    ->label('¿Avance?')
+                    ->label('¿Hubo avance?')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof EstatusAvanceEnum ? $state->getLabel() : $state)
-                    ->color(fn ($record) => $record->hubo_avance instanceof EstatusAvanceEnum
-                        ? $record->hubo_avance->getColor()
-                        : 'gray'
+                    ->formatStateUsing(fn($state) => $state instanceof EstatusAvanceEnum ? $state->getLabel() : $state)
+                    ->color(
+                        fn($record) => $record->hubo_avance instanceof EstatusAvanceEnum
+                            ? $record->hubo_avance->getColor()
+                            : 'gray'
                     ),
 
                 TextColumn::make('created_at')
@@ -132,10 +136,10 @@ class ActuacionesJuicioRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Nueva Actuación')
-                    ->icon('heroicon-o-plus'),
+                    ->label('Nueva actuación')
+                    ->createAnother(false),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
 
@@ -144,11 +148,11 @@ class ActuacionesJuicioRelationManager extends RelationManager
                     ->label('Descargar')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('info')
-                    ->visible(fn ($record) => (bool) $record->archivo_evidencia)
-                    ->url(fn ($record) => $record->url_archivo)
+                    ->visible(fn($record) => (bool) $record->archivo_evidencia)
+                    ->url(fn($record) => $record->url_archivo)
                     ->openUrlInNewTab(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
