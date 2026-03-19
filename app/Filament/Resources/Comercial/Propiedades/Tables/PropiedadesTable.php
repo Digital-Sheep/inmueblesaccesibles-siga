@@ -169,6 +169,39 @@ class PropiedadesTable
                             }
                         }),
 
+                    Action::make('marcar_vendida')
+                        ->label('Marcar como vendida')
+                        ->icon('heroicon-o-check-badge')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('¿Marcar propiedad como vendida?')
+                        ->modalDescription(
+                            fn(Propiedad $record) =>
+                            "Esta acción marcará la propiedad {$record->numero_credito} como VENDIDA. Esta operación no se puede deshacer fácilmente."
+                        )
+                        ->modalSubmitActionLabel('Sí, marcar como vendida')
+                        ->visible(function (Propiedad $record): bool {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            // Solo DGE y Super_Admin pueden ver esta action
+                            if (! $user->hasAnyRole(['DGE', 'Super_Admin'])) {
+                                return false;
+                            }
+
+                            // Solo visible si la propiedad NO está en BAJA ni ya VENDIDA
+                            return ! in_array($record->estatus_comercial, ['VENDIDA', 'BAJA']);
+                        })
+                        ->action(function (Propiedad $record): void {
+                            $record->update(['estatus_comercial' => 'VENDIDA']);
+
+                            Notification::make()
+                                ->success()
+                                ->title('Propiedad marcada como Vendida')
+                                ->body("La propiedad {$record->numero_credito} fue marcada como VENDIDA.")
+                                ->send();
+                        }),
+
                     CalcularCotizacionAction::make(),
 
                     RecotizarAction::make(),

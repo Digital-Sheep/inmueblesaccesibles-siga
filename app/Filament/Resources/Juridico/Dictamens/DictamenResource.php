@@ -18,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
 class DictamenResource extends Resource
@@ -29,6 +30,14 @@ class DictamenResource extends Resource
     protected static ?string $cluster = JuridicoCluster::class;
 
     protected static ?string $recordTitleAttribute = 'numero_credito';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('menu_propiedades');
+    }
 
     public static function getPluralModelLabel(): string
     {
