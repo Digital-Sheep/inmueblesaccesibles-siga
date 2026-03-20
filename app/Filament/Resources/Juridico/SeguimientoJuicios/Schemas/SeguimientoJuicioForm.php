@@ -130,10 +130,8 @@ class SeguimientoJuicioForm
                                 modifyQueryUsing: fn($query) => $query->role('abogado')->where('activo', true)
                             )
                             ->multiple()
-                            ->maxItems(3)
                             ->searchable()
                             ->preload()
-                            ->helperText('Máximo 3 abogados por juicio')
                             ->columnSpanFull(),
 
                         Toggle::make('con_demanda')
