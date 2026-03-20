@@ -14,6 +14,7 @@ class ActuacionJuicio extends Model
     protected $fillable = [
         'seguimiento_juicio_id',
         'fecha_actuacion',
+        'fecha_proxima_actuacion',
         'descripcion_actuacion',
         'etapa_actual',
         'archivo_evidencia',
@@ -22,8 +23,9 @@ class ActuacionJuicio extends Model
     ];
 
     protected $casts = [
-        'fecha_actuacion' => 'date',
-        'hubo_avance'     => EstatusAvanceEnum::class,
+        'fecha_actuacion'          => 'date',
+        'fecha_proxima_actuacion'  => 'date',
+        'hubo_avance'              => EstatusAvanceEnum::class,
     ];
 
     // ── Relaciones ─────────────────────────────────────────────────────────────
@@ -35,10 +37,6 @@ class ActuacionJuicio extends Model
 
     // ── Helpers de archivo ─────────────────────────────────────────────────────
 
-    /**
-     * Devuelve la URL temporal del archivo en el disco 'private'.
-     * Usar en Infolist para generar link de descarga seguro.
-     */
     public function getUrlArchivoAttribute(): ?string
     {
         if (! $this->archivo_evidencia) {
@@ -51,9 +49,6 @@ class ActuacionJuicio extends Model
         );
     }
 
-    /**
-     * Devuelve solo el nombre del archivo para mostrar en tabla.
-     */
     public function getNombreArchivoAttribute(): ?string
     {
         if (! $this->archivo_evidencia) {
@@ -65,12 +60,6 @@ class ActuacionJuicio extends Model
 
     // ── Directorio de almacenamiento ───────────────────────────────────────────
 
-    /**
-     * Genera el directorio de almacenamiento para este juicio.
-     * Estructura: juridico/juicios/{id_garantia}/actuaciones/{año}-{mes}
-     *
-     * Llamar desde FileUpload::make()->directory(fn() => ActuacionJuicio::directorioParaJuicio(...))
-     */
     public static function directorioParaJuicio(string $idGarantia): string
     {
         return 'juridico/juicios/' . $idGarantia . '/actuaciones/' . now()->format('Y-m');

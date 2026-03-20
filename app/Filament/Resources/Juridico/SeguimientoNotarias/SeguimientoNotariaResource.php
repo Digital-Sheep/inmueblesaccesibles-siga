@@ -104,7 +104,10 @@ class SeguimientoNotariaResource extends Resource
                         TextEntry::make('notario')->label('Notario')->default('—'),
                         TextEntry::make('numero_escritura')->label('Núm. Escritura')->default('—'),
                         TextEntry::make('fecha_escritura')->label('Fecha Escritura')->date('d/m/Y')->default('—'),
-                        TextEntry::make('administradora')->label('Administradora')->default('—'),
+                        TextEntry::make('administradora_label')
+                            ->label('Administradora')
+                            ->getStateUsing(fn($record) => $record->nombre_administradora ?? '—'),
+                        IconEntry::make('activo')->label('Activo')->boolean(),
                         IconEntry::make('activo')->label('Activo')->boolean(),
                     ]),
                 ]),

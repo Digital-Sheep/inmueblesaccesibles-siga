@@ -12,6 +12,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class SeguimientoJuicioInfolist
 {
@@ -53,16 +54,20 @@ class SeguimientoJuicioInfolist
                                             ->color(fn($state) => $state instanceof TipoProcesoJuicioEnum ? $state->getColor() : 'gray')
                                             ->default('—'),
 
-                                        TextEntry::make('abogado_nombre')
-                                            ->label('Abogado')
-                                            ->default('—'),
+                                        TextEntry::make('abogados.name')
+                                            ->label('Abogado(s)')
+                                            ->badge()
+                                            ->color('info')
+                                            ->default('Sin abogado asignado')
+                                            ->columnSpanFull(),
 
-                                        TextEntry::make('administradora')
+                                        TextEntry::make('id')
                                             ->label('Administradora')
+                                            ->formatStateUsing(fn($state, $record) => $record->nombre_administradora ?? '—')
                                             ->default('—'),
 
-                                        IconEntry::make('sin_demanda')
-                                            ->label('Sin Demanda')
+                                        IconEntry::make('con_demanda')
+                                            ->label('Con Demanda')
                                             ->boolean(),
 
                                         IconEntry::make('hay_cesion_derechos')
@@ -154,9 +159,24 @@ class SeguimientoJuicioInfolist
                                         ->default('Sin información')
                                         ->columnSpanFull(),
 
-                                    TextEntry::make('estrategia_juridica')
+                                    TextEntry::make('id')
                                         ->label('Estrategia Jurídica')
-                                        ->default('—')
+                                        ->formatStateUsing(function ($state, $record) {
+                                            if (! $record->estrategia_juridica_archivo) {
+                                                return 'Sin archivo';
+                                            }
+                                            return basename($record->estrategia_juridica_archivo);
+                                        })
+                                        ->url(
+                                            fn($record) => $record->estrategia_juridica_archivo
+                                                ? Storage::disk('private')->temporaryUrl(
+                                                    $record->estrategia_juridica_archivo,
+                                                    now()->addMinutes(30)
+                                                )
+                                                : null
+                                        )
+                                        ->openUrlInNewTab()
+                                        ->color('primary')
                                         ->columnSpanFull(),
 
                                     TextEntry::make('notas_director')

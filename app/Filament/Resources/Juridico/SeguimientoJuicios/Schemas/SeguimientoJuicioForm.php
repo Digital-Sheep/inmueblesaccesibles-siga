@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Juridico\SeguimientoJuicios\Schemas;
 use App\Enums\NivelPrioridadJuicioEnum;
 use App\Enums\SedeJuicioEnum;
 use App\Enums\TipoProcesoJuicioEnum;
+use App\Models\CatAdministradora;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -60,7 +62,27 @@ class SeguimientoJuicioForm
                             ->searchable()
                             ->preload()
                             ->nullable()
-                            ->helperText('Solo si la propiedad ya existe en SIGA')
+                            ->live()
+                            ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set) {
+                                if (! $state) {
+                                    return;
+                                }
+
+                                $propiedad = \App\Models\Propiedad::find($state);
+
+                                if (! $propiedad) {
+                                    return;
+                                }
+
+                                // Llenar domicilio con direccion_completa de la propiedad
+                                if ($propiedad->direccion_completa) {
+                                    $set('domicilio', $propiedad->direccion_completa);
+                                }
+
+                                // También llenar número de crédito si está vacío
+                                $set('numero_credito', $propiedad->numero_credito);
+                            })
+                            ->helperText('Al seleccionar, se autocompleta el domicilio y número de crédito')
                             ->columnSpanFull(),
 
                         TextInput::make('nombre_cliente')
@@ -68,9 +90,16 @@ class SeguimientoJuicioForm
                             ->placeholder('Sin cliente')
                             ->maxLength(200),
 
-                        TextInput::make('administradora')
+                        Select::make('administradora_id')
                             ->label('Administradora')
-                            ->maxLength(200),
+                            ->options(
+                                CatAdministradora::where('activo', true)
+                                    ->orderBy('nombre')
+                                    ->pluck('nombre', 'id')
+                            )
+                            ->searchable()
+                            ->nullable()
+                            ->helperText('Selecciona del catálogo de administradoras'),
                     ]),
                 ]),
 
@@ -93,14 +122,25 @@ class SeguimientoJuicioForm
                             ->options(TipoProcesoJuicioEnum::class)
                             ->nullable(),
 
-                        TextInput::make('abogado_nombre')
-                            ->label('Abogado a Cargo')
-                            ->maxLength(200),
+                        Select::make('abogados')
+                            ->label('Abogados a Cargo')
+                            ->relationship(
+                                name: 'abogados',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn($query) => $query->role('abogado')->where('activo', true)
+                            )
+                            ->multiple()
+                            ->maxItems(3)
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Máximo 3 abogados por juicio')
+                            ->columnSpanFull(),
 
-                        Toggle::make('sin_demanda')
-                            ->label('Sin Demanda / Alta Prioridad')
+                        Toggle::make('con_demanda')
+                            ->label('¿Tiene Demanda Presentada?')
                             ->inline(false)
-                            ->helperText('Activa para casos de la hoja "Sin Demanda con Alta Prioridad"'),
+                            ->default(true)
+                            ->helperText('Activa cuando ya existe demanda formal presentada ante el juzgado'),
 
                         Toggle::make('activo')
                             ->label('Juicio Activo')
@@ -192,9 +232,17 @@ class SeguimientoJuicioForm
                         ->label('Etapa en que se Encuentra')
                         ->rows(3),
 
-                    Textarea::make('estrategia_juridica')
-                        ->label('Estrategia Jurídica')
-                        ->rows(3),
+                    FileUpload::make('estrategia_juridica_archivo')
+                        ->label('Estrategia Jurídica (archivo)')
+                        ->disk('private')
+                        ->directory(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                            $idGarantia = $get('id_garantia') ?? 'sin-garantia';
+                            return 'juridico/juicios/' . $idGarantia . '/estrategia';
+                        })
+                        ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                        ->maxSize(20480) // 20 MB
+                        ->preserveFilenames(false)
+                        ->helperText('PDF, imagen o Word. Máx. 20MB.'),
 
                     Textarea::make('notas_director')
                         ->label('Notas del Director / UCP')

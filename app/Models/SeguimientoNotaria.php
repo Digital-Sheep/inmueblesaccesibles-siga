@@ -51,7 +51,7 @@ class SeguimientoNotaria extends Model
     public function actuaciones(): HasMany
     {
         return $this->hasMany(ActuacionNotaria::class)
-                    ->orderByDesc('fecha_actuacion');
+            ->orderByDesc('fecha_actuacion');
     }
 
     // ── Accessors ──────────────────────────────────────────────────────────────
@@ -82,5 +82,15 @@ class SeguimientoNotaria extends Model
         }
 
         return $this->ultima_actuacion_at->diffInDays(now()) > 7;
+    }
+
+    public function getNombreAdministradoraAttribute(): ?string
+    {
+        return $this->catAdministradora?->nombre ?? $this->administradora;
+    }
+
+    public function catAdministradora(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\CatAdministradora::class, 'administradora_id');
     }
 }

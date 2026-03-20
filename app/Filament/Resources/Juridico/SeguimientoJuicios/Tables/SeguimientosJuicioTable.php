@@ -68,10 +68,11 @@ class SeguimientosJuicioTable
                     ->badge()
                     ->sortable(),
 
-                TextColumn::make('abogado_nombre')
-                    ->label('Abogado')
-                    ->searchable()
-                    ->limit(20)
+                TextColumn::make('abogados.name')
+                    ->label('Abogado(s)')
+                    ->badge()
+                    ->color('info')
+                    ->limitList(2)
                     ->toggleable(),
 
                 TextColumn::make('etapa_actual')
@@ -216,6 +217,11 @@ class SeguimientosJuicioTable
                         )
                         ->action(fn($record) => $record->update(['activo' => false])),
                 ])
+                    ->label('Acciones')
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->size('sm')
+                    ->color('gray')
+                    ->button(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -258,7 +264,7 @@ class SeguimientosJuicioTable
             FileUpload::make('archivo_evidencia')
                 ->label('Evidencia (opcional)')
                 ->disk('private')
-                ->directory(fn ($record) => ActuacionJuicio::directorioParaJuicio(
+                ->directory(fn($record) => ActuacionJuicio::directorioParaJuicio(
                     $record->id_garantia ?? 'sin-garantia-' . $record->id
                 ))
                 ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])

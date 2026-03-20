@@ -14,6 +14,7 @@ class ActuacionNotaria extends Model
     protected $fillable = [
         'seguimiento_notaria_id',
         'fecha_actuacion',
+        'fecha_proxima_actuacion',
         'descripcion_actuacion',
         'etapa_actual',
         'archivo_evidencia',
@@ -22,18 +23,15 @@ class ActuacionNotaria extends Model
     ];
 
     protected $casts = [
-        'fecha_actuacion' => 'date',
-        'hubo_avance'     => EstatusAvanceEnum::class,
+        'fecha_actuacion'         => 'date',
+        'fecha_proxima_actuacion' => 'date',
+        'hubo_avance'             => EstatusAvanceEnum::class,
     ];
-
-    // ── Relaciones ─────────────────────────────────────────────────────────────
 
     public function seguimientoNotaria(): BelongsTo
     {
         return $this->belongsTo(SeguimientoNotaria::class);
     }
-
-    // ── Helpers de archivo ─────────────────────────────────────────────────────
 
     public function getUrlArchivoAttribute(): ?string
     {

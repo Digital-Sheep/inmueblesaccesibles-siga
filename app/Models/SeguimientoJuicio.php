@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use App\Enums\EstatusAvanceEnum;
 use App\Enums\NivelPrioridadJuicioEnum;
 use App\Enums\SedeJuicioEnum;
 use App\Enums\TipoProcesoJuicioEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -22,12 +22,12 @@ class SeguimientoJuicio extends Model
         'numero_credito',
         'id_garantia',
         'nombre_cliente',
-        'administradora',
+        'administradora',        // deprecated — mantener para datos históricos
+        'administradora_id',     // nuevo — FK a cat_administradoras
         'domicilio',
         'sede',
         'nivel_prioridad',
         'tipo_proceso',
-        'abogado_nombre',
         'actor',
         'demandado',
         'numero_expediente',
@@ -40,8 +40,10 @@ class SeguimientoJuicio extends Model
         'cesionario',
         'etapa_actual',
         'estrategia_juridica',
+        'estrategia_juridica_archivo',
         'notas_director',
-        'sin_demanda',
+        'sin_demanda',           // deprecated — usar con_demanda
+        'con_demanda',           // nuevo
         'activo',
         'ultima_actuacion_at',
     ];
@@ -52,36 +54,51 @@ class SeguimientoJuicio extends Model
         'sede'                => SedeJuicioEnum::class,
         'hay_cesion_derechos' => 'boolean',
         'sin_demanda'         => 'boolean',
+        'con_demanda'         => 'boolean',
         'activo'              => 'boolean',
         'ultima_actuacion_at' => 'datetime',
     ];
 
     // ── Relaciones ─────────────────────────────────────────────────────────────
 
-    /**
-     * Propiedad vinculada en SIGA (opcional en v1).
-     * Null-safe siempre: puede no existir todavía.
-     */
     public function propiedad(): BelongsTo
     {
         return $this->belongsTo(Propiedad::class);
     }
 
     /**
-     * Actuaciones semanales del juicio.
-     * Ordenadas de más reciente a más antigua para facilitar la vista.
+     * Administradora del catálogo (nuevo campo).
+     * Null-safe: registros históricos pueden no tener FK todavía.
+     */
+    public function catAdministradora(): BelongsTo
+    {
+        return $this->belongsTo(CatAdministradora::class, 'administradora_id');
+    }
+
+    /**
+     * Abogados asignados — usuarios con rol 'abogado'.
+     * Máximo 3 por juicio, validado a nivel de aplicación.
+     */
+    public function abogados(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'abogado_seguimiento_juicio')
+            ->withPivot('orden')
+            ->orderByPivot('orden');
+    }
+
+    /**
+     * Actuaciones semanales, más reciente primero.
      */
     public function actuaciones(): HasMany
     {
         return $this->hasMany(ActuacionJuicio::class)
-                    ->orderByDesc('fecha_actuacion');
+            ->orderByDesc('fecha_actuacion');
     }
 
-    // ── Accessors de utilidad ──────────────────────────────────────────────────
+    // ── Accessors ──────────────────────────────────────────────────────────────
 
     /**
-     * Etiqueta descriptiva para breadcrumb y recordTitleAttribute.
-     * Formato: "[SEDE] - [Cliente]" con fallbacks progresivos.
+     * Título descriptivo para breadcrumb: "[Sede] — [Cliente]"
      */
     public function getTituloAttribute(): string
     {
@@ -94,33 +111,23 @@ class SeguimientoJuicio extends Model
     }
 
     /**
-     * Días transcurridos desde la última actuación registrada.
-     * Null si nunca ha tenido actuaciones.
+     * Nombre de la administradora — prioriza el catálogo, fallback al texto libre histórico.
      */
-    public function getDiasSinActuacionAttribute(): ?int
+    public function getNombreAdministradoraAttribute(): ?string
     {
-        if (! $this->ultima_actuacion_at) {
-            return null;
-        }
+        return $this->catAdministradora?->nombre ?? $this->administradora;
+    }
 
+    public function getDiasSinActuacionAttribute(): int
+    {
         return (int) $this->ultima_actuacion_at->diffInDays(now());
     }
 
-    /**
-     * Indica si el juicio está rezagado (>7 días sin actuación).
-     */
     public function getEstaRezagadoAttribute(): bool
     {
-        if (! $this->ultima_actuacion_at) {
-            return true; // Sin ninguna actuación = rezagado
-        }
-
         return $this->ultima_actuacion_at->diffInDays(now()) > 7;
     }
 
-    /**
-     * Última actuación registrada (la más reciente).
-     */
     public function getUltimaActuacionAttribute(): ?ActuacionJuicio
     {
         return $this->actuaciones->first();
