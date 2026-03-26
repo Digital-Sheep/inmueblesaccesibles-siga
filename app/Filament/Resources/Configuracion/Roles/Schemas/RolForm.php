@@ -489,6 +489,27 @@ class RolForm
                                                         }
                                                     }),
                                             ]),
+
+                                        Section::make('Seguimiento de dictámenes')
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->schema([
+                                                CheckboxList::make('seguimientodictamenes')
+                                                    ->label('Permisos de seguimiento de dictámenes')
+                                                    ->options(self::getPermisosPorCategoria('seguimientodictamenes'))
+                                                    ->columns(3)
+                                                    ->gridDirection('row')
+                                                    ->bulkToggleable()
+                                                    ->live()
+                                                    ->afterStateHydrated(function (CheckboxList $component, $record) {
+                                                        if ($record) {
+                                                            $permisos = $record->permissions->pluck('name')->toArray();
+                                                            $opciones = array_keys(self::getPermisosPorCategoria('seguimientodictamenes'));
+                                                            $seleccionados = array_intersect($permisos, $opciones);
+                                                            $component->state($seleccionados);
+                                                        }
+                                                    }),
+                                            ]),
                                     ]),
 
                                 // 💰 ADMINISTRATIVO
@@ -774,6 +795,7 @@ class RolForm
             'especiales' => ['autorizar_descuentos_'],
             'seguimientonotarias' => ['seguimientonotarias_'],
             'seguimientojuicios' => ['seguimientojuicios_'],
+            'seguimientodictamenes' => ['seguimientodictamenes_'],
         ];
 
         if (!isset($prefijos[$categoria])) {
@@ -832,7 +854,8 @@ class RolForm
             'reportes_',
             'autorizar_descuentos_',
             'seguimientonotarias_',
-            'seguimientojuicios_'
+            'seguimientojuicios_',
+            'seguimientodictamenes_'
         ], '', $name);
 
         // Reemplaza guiones bajos por espacios

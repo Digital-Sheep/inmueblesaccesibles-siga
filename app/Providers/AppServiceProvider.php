@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\ActuacionDictamen;
 use App\Models\ActuacionJuicio;
 use App\Models\ActuacionNotaria;
 use App\Models\Dictamen;
 use App\Models\Interaccion;
 use App\Models\ProcesoVenta;
+use App\Observers\ActuacionDictamenObserver;
 use App\Observers\ActuacionJuicioObserver;
 use App\Observers\ActuacionNotariaObserver;
 use App\Observers\DictamenObserver;
@@ -35,5 +37,6 @@ class AppServiceProvider extends ServiceProvider
         ProcesoVenta::observe(ProcesoVentaObserver::class);
         ActuacionJuicio::observe(ActuacionJuicioObserver::class);
         ActuacionNotaria::observe(ActuacionNotariaObserver::class);
+        ActuacionDictamen::observe(ActuacionDictamenObserver::class);
     }
 }

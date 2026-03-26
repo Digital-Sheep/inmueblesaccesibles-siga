@@ -16,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use UnitEnum;
@@ -29,6 +30,14 @@ class SolicitudContratoResource extends Resource
     protected static ?string $cluster = JuridicoCluster::class;
 
     protected static ?string $recordTitleAttribute = 'id';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->hasRole('Super_Admin');
+    }
 
     public static function form(Schema $schema): Schema
     {

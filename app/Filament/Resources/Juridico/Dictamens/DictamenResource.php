@@ -36,7 +36,7 @@ class DictamenResource extends Resource
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        return $user->can('menu_propiedades');
+        return $user->hasRole('Super_Admin');
     }
 
     public static function getPluralModelLabel(): string
