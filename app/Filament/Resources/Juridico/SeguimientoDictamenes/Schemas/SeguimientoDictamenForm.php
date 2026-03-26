@@ -94,6 +94,14 @@ class SeguimientoDictamenForm
                                     $set('valor_venta', $propiedad->cotizacionActiva->precio_venta_con_descuento);
                                     $set('valor_sin_remodelacion', $propiedad->cotizacionActiva->precio_sin_remodelacion);
                                 }
+
+                                if ($propiedad->precio_lista) {
+                                    $set('valor_garantia', $propiedad->precio_lista);
+                                }
+
+                                if ($propiedad->precio_valor_comercial) {
+                                    $set('valor_comercial_aproximado', $propiedad->precio_valor_comercial);
+                                }
                             })
                             ->helperText('Al seleccionar, se autocompletan dirección, crédito y valores')
                             ->columnSpanFull(),
