@@ -76,9 +76,9 @@ class ActuacionesNotariaRelationManager extends RelationManager
                         return ActuacionNotaria::directorioParaNotaria($idGarantia);
                     })
                     ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
-                    ->maxSize(10240)
+                    ->maxSize(102400)
                     ->preserveFilenames(false)
-                    ->helperText('PDF o imagen. Máx. 10MB.')
+                    ->helperText('PDF o imagen. Máx. 100MB.')
                     ->nullable(),
             ]);
     }

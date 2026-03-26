@@ -238,9 +238,9 @@ class SeguimientoJuicioForm
                             return 'juridico/juicios/' . $idGarantia . '/estrategia';
                         })
                         ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
-                        ->maxSize(20480) // 20 MB
+                        ->maxSize(102400)
                         ->preserveFilenames(false)
-                        ->helperText('PDF, imagen o Word. Máx. 20MB.'),
+                        ->helperText('PDF, imagen o Word. Máx. 100MB.'),
 
                     Textarea::make('notas_director')
                         ->label('Notas del Director / UCP')
