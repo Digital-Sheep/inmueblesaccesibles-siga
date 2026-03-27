@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Juridico\SeguimientoDictamenes\URRJ;
 
+use App\Enums\TipoProcesoDictamenEnum;
 use App\Filament\Clusters\Juridico\JuridicoCluster;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\ActuacionesDictamenRelationManager;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\Schemas\SeguimientoDictamenForm;
@@ -56,7 +57,11 @@ class SeguimientoDictamenURRJResource extends Resource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['propiedad', 'cliente', 'solicitante', 'catAdministradora', 'actuaciones'])
-            ->withCount('actuaciones');
+            ->withCount('actuaciones')
+            ->whereIn('tipo_proceso', [
+                TipoProcesoDictamenEnum::CAMBIO->value,
+                TipoProcesoDictamenEnum::INVERSION->value,
+            ]);;
     }
 
     public static function form(Schema $schema): Schema

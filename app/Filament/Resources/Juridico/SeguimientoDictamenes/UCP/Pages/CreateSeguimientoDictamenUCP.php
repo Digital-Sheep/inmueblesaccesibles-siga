@@ -1,20 +1,31 @@
 <?php
+
 namespace App\Filament\Resources\Juridico\SeguimientoDictamenes\UCP\Pages;
+
+use App\Enums\TipoProcesoDictamenEnum;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\Schemas\SeguimientoDictamenForm;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\UCP\SeguimientoDictamenUCPResource;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\CreateRecord\Concerns\HasWizard;
 use Filament\Schemas\Components\Wizard\Step;
-class CreateSeguimientoDictamenUCP extends CreateRecord {
+
+class CreateSeguimientoDictamenUCP extends CreateRecord
+{
     use HasWizard;
     protected static string $resource = SeguimientoDictamenUCPResource::class;
-    protected function getCreateAnotherFormAction(): \Filament\Actions\Action {
+
+    protected function getCreateAnotherFormAction(): \Filament\Actions\Action
+    {
         return parent::getCreateAnotherFormAction()->hidden();
     }
-    protected function getRedirectUrl(): string {
+
+    protected function getRedirectUrl(): string
+    {
         return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
     }
-    protected function getSteps(): array {
+
+    protected function getSteps(): array
+    {
         return [
             Step::make('Información General')->icon('heroicon-o-information-circle')
                 ->schema(SeguimientoDictamenForm::camposInformacionGeneral()),
@@ -25,5 +36,11 @@ class CreateSeguimientoDictamenUCP extends CreateRecord {
             Step::make('Seguimiento')->icon('heroicon-o-document-text')
                 ->schema(SeguimientoDictamenForm::camposSeguimiento()),
         ];
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['tipo_proceso'] = TipoProcesoDictamenEnum::VENTA->value;
+        return $data;
     }
 }

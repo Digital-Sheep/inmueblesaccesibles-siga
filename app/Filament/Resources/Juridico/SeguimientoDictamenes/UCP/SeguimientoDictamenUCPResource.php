@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Juridico\SeguimientoDictamenes\UCP;
 
+use App\Enums\TipoProcesoDictamenEnum;
 use App\Filament\Clusters\Juridico\JuridicoCluster;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\ActuacionesDictamenRelationManager;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\Schemas\SeguimientoDictamenForm;
@@ -67,7 +68,8 @@ class SeguimientoDictamenUCPResource extends Resource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['propiedad', 'cliente', 'solicitante', 'catAdministradora', 'actuaciones'])
-            ->withCount('actuaciones');
+            ->withCount('actuaciones')
+            ->where('tipo_proceso', TipoProcesoDictamenEnum::VENTA);;
     }
 
     // ── Schemas ────────────────────────────────────────────────────────────────

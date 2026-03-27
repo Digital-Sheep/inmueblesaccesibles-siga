@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Juridico\SeguimientoDictamenes\URRJ\Pages;
 
+use App\Enums\TipoProcesoDictamenEnum;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\Schemas\SeguimientoDictamenForm;
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\URRJ\SeguimientoDictamenURRJResource;
 use Filament\Resources\Pages\CreateRecord;
@@ -11,15 +12,27 @@ use Filament\Schemas\Components\Wizard\Step;
 class CreateSeguimientoDictamenURRJ extends CreateRecord
 {
     use HasWizard;
+
     protected static string $resource = SeguimientoDictamenURRJResource::class;
+
     protected function getCreateAnotherFormAction(): \Filament\Actions\Action
     {
         return parent::getCreateAnotherFormAction()->hidden();
     }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
     }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        if (empty($data['tipo_proceso'])) {
+            $data['tipo_proceso'] = TipoProcesoDictamenEnum::CAMBIO->value;
+        }
+        return $data;
+    }
+
     protected function getSteps(): array
     {
         return [
