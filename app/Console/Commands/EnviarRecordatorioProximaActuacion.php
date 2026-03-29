@@ -34,7 +34,7 @@ class EnviarRecordatorioProximaActuacion extends Command
 
             $esMañana = $actuacion->fecha_proxima_actuacion->toDateString() === $manana;
             $cuando   = $esMañana ? 'mañana' : 'hoy';
-            $titulo   = "📅 Actuación programada para {$cuando}";
+            $titulo   = "Actuación programada para {$cuando}";
             $cuerpo   = "Juicio: {$seguimiento->titulo}. Fecha: {$actuacion->fecha_proxima_actuacion->format('d/m/Y')}.";
 
             // Notificar a los abogados asignados al juicio
@@ -77,7 +77,7 @@ class EnviarRecordatorioProximaActuacion extends Command
             $supervisores = \App\Models\User::permission('juridico_seguimiento_notarias_ver_todos')->get();
             foreach ($supervisores as $supervisor) {
                 Notification::make()
-                    ->title("📄 Actuación de notaría programada para {$cuando}")
+                    ->title("Actuación de notaría programada para {$cuando}")
                     ->body("Notaría: {$seguimiento->titulo}. Fecha: {$actuacion->fecha_proxima_actuacion->format('d/m/Y')}.")
                     ->icon('heroicon-o-document-text')
                     ->warning()

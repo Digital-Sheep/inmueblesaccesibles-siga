@@ -6,6 +6,7 @@ use App\Enums\SedeJuicioEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SeguimientoNotaria extends Model
@@ -52,6 +53,40 @@ class SeguimientoNotaria extends Model
     {
         return $this->hasMany(ActuacionNotaria::class)
             ->orderByDesc('fecha_actuacion');
+    }
+
+    /**
+     * Todos los archivos adjuntos a esta notaría.
+     */
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad')
+            ->whereNotNull('cat_carpeta_id')
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Documentos filtrados por carpeta específica.
+     */
+    public function archivosDeCarpeta(int $carpetaId): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad')
+            ->where('cat_carpeta_id', $carpetaId)
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Path base para almacenamiento de documentos de esta notaría.
+     *
+     * Patrón: juridico/notarias/{identificador}
+     */
+    public function getPathBaseAttribute(): string
+    {
+        $identificador = $this->id_garantia
+            ? $this->id_garantia
+            : 'notaria-' . $this->id;
+
+        return 'juridico/notarias/' . $identificador;
     }
 
     // ── Accessors ──────────────────────────────────────────────────────────────

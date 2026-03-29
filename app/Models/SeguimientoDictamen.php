@@ -8,6 +8,7 @@ use App\Enums\TipoProcesoDictamenEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SeguimientoDictamen extends Model
@@ -90,7 +91,38 @@ class SeguimientoDictamen extends Model
     public function actuaciones(): HasMany
     {
         return $this->hasMany(ActuacionDictamen::class)
-                    ->orderByDesc('fecha_actuacion');
+            ->orderByDesc('fecha_actuacion');
+    }
+
+    /**
+     * Todos los archivos adjuntos a este dictamen.
+     */
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad')
+            ->whereNotNull('cat_carpeta_id')
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Documentos filtrados por carpeta específica.
+     */
+    public function archivosDeCarpeta(int $carpetaId): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad')
+            ->where('cat_carpeta_id', $carpetaId)
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Path base para almacenamiento de documentos de este dictamen.
+     * Los dictámenes no tienen id_garantia propio, usan su ID.
+     *
+     * Patrón: juridico/dictamenes/dictamen-{id}
+     */
+    public function getPathBaseAttribute(): string
+    {
+        return 'juridico/dictamenes/dictamen-' . $this->id;
     }
 
     // ── Accessors ──────────────────────────────────────────────────────────────

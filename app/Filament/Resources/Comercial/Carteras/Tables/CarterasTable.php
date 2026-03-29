@@ -89,8 +89,9 @@ class CarterasTable
                             $supervisores = User::where('sucursal_id', $record->sucursal_id)->role(['Direccion_Legal', 'Direccion_Comercial'])->get();
 
                             Notification::make()
-                                ->title('📢 Nueva cartera por validar')
+                                ->title('Nueva cartera por validar')
                                 ->body("Se han cargado  {$resultado['procesados']} propiedades nuevas para tu sucursal en la cartera {$record->nombre}.\n\nPor favor, revisa los borradores y valídalos para venta.")
+                                ->icon('heroicon-o-bell')
                                 ->warning()
                                 ->actions([
                                     Action::make('revisar')

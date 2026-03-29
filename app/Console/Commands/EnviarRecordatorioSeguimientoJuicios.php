@@ -33,7 +33,7 @@ class EnviarRecordatorioSeguimientoJuicios extends Command
 
         foreach ($destinatarios as $usuario) {
             Notification::make()
-                ->title('📅 Recordatorio: Seguimiento Semanal de Juicios')
+                ->title('Recordatorio: Seguimiento Semanal de Juicios')
                 ->body("Hay {$totalActivos} juicios activos que requieren actualización esta semana.")
                 ->icon('heroicon-o-scale')
                 ->warning()

@@ -169,7 +169,7 @@ class RechazarPrecioAction
         // Enviar notificación a cada usuario DGE
         foreach ($usuariosDGE as $usuario) {
             Notification::make()
-                ->title('⚠️ Precio Rechazado - Requiere tu Decisión')
+                ->title('Precio rechazado - Requiere tu decisión')
                 ->body(
                     "{$areaRechazo} rechazó el precio de cotización.\n\n" .
                         "Precio original: $" . number_format($record->precio_venta_sugerido, 2) . "\n" .

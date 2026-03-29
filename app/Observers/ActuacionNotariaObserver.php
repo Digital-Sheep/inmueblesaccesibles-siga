@@ -2,7 +2,10 @@
 
 namespace App\Observers;
 
+use App\Filament\Resources\Juridico\SeguimientoNotarias\SeguimientoNotariaResource;
 use App\Models\ActuacionNotaria;
+use App\Models\User;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
 
 class ActuacionNotariaObserver
@@ -29,6 +32,12 @@ class ActuacionNotariaObserver
         }
 
         $seguimiento->updateQuietly($datos);
+
+        $this->notificarDGE(
+            titulo: 'Nueva actuación en notaría',
+            cuerpo: "{$seguimiento->titulo} — {$actuacion->descripcion_actuacion}",
+            url: SeguimientoNotariaResource::getUrl('view', ['record' => $seguimiento->id]),
+        );
     }
 
     public function updated(ActuacionNotaria $actuacion): void
@@ -46,5 +55,30 @@ class ActuacionNotariaObserver
         $seguimiento->updateQuietly([
             'etapa_actual' => $actuacion->etapa_actual,
         ]);
+    }
+
+    private function notificarDGE(string $titulo, string $cuerpo, string $url): void
+    {
+        $destinatarios = User::role('DGE')->get();
+
+        if ($destinatarios->isEmpty()) {
+            return;
+        }
+
+        foreach ($destinatarios as $usuario) {
+            Notification::make()
+                ->title($titulo)
+                ->body($cuerpo)
+                ->icon('heroicon-o-scale')
+                ->info()
+                ->actions([
+                    \Filament\Actions\Action::make('ver')
+                        ->label('Ver seguimiento')
+                        ->url($url)
+                        ->button()
+                        ->markAsRead(),
+                ])
+                ->sendToDatabase($usuario);
+        }
     }
 }

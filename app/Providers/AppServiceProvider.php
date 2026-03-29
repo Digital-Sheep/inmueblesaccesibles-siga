@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Livewire\Juridico\DocumentosCarpetaComponent;
 use App\Models\ActuacionDictamen;
 use App\Models\ActuacionJuicio;
 use App\Models\ActuacionNotaria;
@@ -14,8 +15,9 @@ use App\Observers\ActuacionNotariaObserver;
 use App\Observers\DictamenObserver;
 use App\Observers\InteraccionObserver;
 use App\Observers\ProcesoVentaObserver;
-
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,5 +40,15 @@ class AppServiceProvider extends ServiceProvider
         ActuacionJuicio::observe(ActuacionJuicioObserver::class);
         ActuacionNotaria::observe(ActuacionNotariaObserver::class);
         ActuacionDictamen::observe(ActuacionDictamenObserver::class);
+
+        Livewire::component('juridico.documentos-carpeta', DocumentosCarpetaComponent::class);
+
+        // Morph map para documentos jurídicos
+        // Evita guardar namespaces completos en archivos.entidad_type
+        Relation::morphMap([
+            'seguimiento_juicio'   => \App\Models\SeguimientoJuicio::class,
+            'seguimiento_notaria'  => \App\Models\SeguimientoNotaria::class,
+            'seguimiento_dictamen' => \App\Models\SeguimientoDictamen::class,
+        ]);
     }
 }

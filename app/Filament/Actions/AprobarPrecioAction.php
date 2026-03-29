@@ -212,7 +212,7 @@ class AprobarPrecioAction
 
         foreach ($usuarios as $usuario) {
             Notification::make()
-                ->title('📋 Precio Pendiente de tu Aprobación')
+                ->title('Precio pendiente de tu aprobación')
                 ->body(sprintf(
                     "La propiedad %s tiene un precio pendiente de aprobación por tu área.\n\n" .
                         "Una área ya aprobó, falta tu validación.",
@@ -246,7 +246,7 @@ class AprobarPrecioAction
 
         foreach ($usuariosDGE as $usuario) {
             Notification::make()
-                ->title('⚠️ Precio Rechazado - Requiere tu Decisión')
+                ->title('Precio rechazado - Requiere tu decisión')
                 ->body(sprintf(
                     "La propiedad %s requiere tu decisión final.\n\n" .
                         "Precio sugerido: $%s\n" .

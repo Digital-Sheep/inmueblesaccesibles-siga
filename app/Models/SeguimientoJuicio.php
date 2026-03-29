@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SeguimientoJuicio extends Model
@@ -93,6 +94,46 @@ class SeguimientoJuicio extends Model
     {
         return $this->hasMany(ActuacionJuicio::class)
             ->orderByDesc('fecha_actuacion');
+    }
+
+    /**
+     * Todos los archivos adjuntos a este juicio.
+     * Usa el morph 'entidad' (entidad_type / entidad_id) ya existente en la tabla archivos.
+     */
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad')
+            ->whereNotNull('cat_carpeta_id')  // solo documentos jurídicos categorizados
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Documentos filtrados por carpeta específica.
+     * Usado por DocumentosCarpetaComponent para cargar solo los de un tab.
+     *
+     * @param int $carpetaId ID de CatCarpetaJuridica
+     */
+    public function archivosDeCarpeta(int $carpetaId): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'entidad')
+            ->where('cat_carpeta_id', $carpetaId)
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Helper para construir el path base de almacenamiento de este juicio.
+     * Usado por DocumentosCarpetaComponent al subir archivos.
+     *
+     * Patrón: juridico/juicios/{identificador}
+     * Donde identificador = id_garantia si existe, sino "juicio-{id}"
+     */
+    public function getPathBaseAttribute(): string
+    {
+        $identificador = $this->id_garantia
+            ? $this->id_garantia
+            : 'juicio-' . $this->id;
+
+        return 'juridico/juicios/' . $identificador;
     }
 
     // ── Accessors ──────────────────────────────────────────────────────────────

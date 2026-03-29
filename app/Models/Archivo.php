@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class Archivo extends Model
 {
@@ -18,6 +19,7 @@ class Archivo extends Model
         'entidad_type',
         'entidad_id',
         'categoria',
+        'cat_carpeta_id',
         'ruta_archivo',
         'nombre_original',
         'tipo_mime',
@@ -39,6 +41,15 @@ class Archivo extends Model
     }
 
     /**
+     * Carpeta jurídica a la que pertenece este archivo.
+     * NULL para archivos de otros módulos (propiedades, clientes, etc.)
+     */
+    public function catCarpeta(): BelongsTo
+    {
+        return $this->belongsTo(CatCarpetaJuridica::class, 'cat_carpeta_id');
+    }
+
+    /**
      * Usuario que subió el archivo.
      */
     public function subidoPor(): BelongsTo
@@ -49,6 +60,44 @@ class Archivo extends Model
     public function creadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * URL temporal firmada para descargar desde disco private.
+     * Válida 30 minutos.
+     */
+    public function getUrlTemporalAttribute(): ?string
+    {
+        if (! $this->ruta_archivo) {
+            return null;
+        }
+
+        return Storage::disk('private')->temporaryUrl(
+            $this->ruta_archivo,
+            now()->addMinutes(30)
+        );
+    }
+
+    /**
+     * Solo el nombre del archivo para mostrarlo en la UI.
+     */
+    public function getNombreCortoAttribute(): string
+    {
+        return basename($this->nombre_original ?? $this->ruta_archivo);
+    }
+
+    /**
+     * Peso legible para humanos (KB / MB).
+     */
+    public function getPesoLegibleAttribute(): string
+    {
+        if (! $this->peso_kb) {
+            return '—';
+        }
+
+        return $this->peso_kb >= 1024
+            ? round($this->peso_kb / 1024, 1) . ' MB'
+            : $this->peso_kb . ' KB';
     }
 
     protected static function boot()

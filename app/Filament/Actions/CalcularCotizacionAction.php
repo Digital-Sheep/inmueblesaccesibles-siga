@@ -339,7 +339,7 @@ class CalcularCotizacionAction
 
         if ($aprobadoresComercial->isNotEmpty()) {
             Notification::make()
-                ->title('🔔 Nueva Cotización por Aprobar')
+                ->title('Nueva cotización por aprobar')
                 ->body("Propiedad: {$record->numero_credito}\nPrecio: $" . number_format($cotizacion->precio_venta_sugerido, 2))
                 ->icon('heroicon-o-currency-dollar')
                 ->actions([
@@ -352,7 +352,7 @@ class CalcularCotizacionAction
 
         if ($aprobadoresContabilidad->isNotEmpty()) {
             Notification::make()
-                ->title('🔔 Nueva Cotización por Aprobar')
+                ->title('Nueva cotización por aprobar')
                 ->body("Propiedad: {$record->numero_credito}\nPrecio: $" . number_format($cotizacion->precio_venta_sugerido, 2))
                 ->icon('heroicon-o-currency-dollar')
                 ->actions([

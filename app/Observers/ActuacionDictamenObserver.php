@@ -3,7 +3,12 @@
 namespace App\Observers;
 
 use App\Enums\EstatusDictamenEnum;
+use App\Enums\TipoProcesoDictamenEnum;
+use App\Filament\Resources\Juridico\SeguimientoDictamenes\UCP\SeguimientoDictamenUCPResource;
+use App\Filament\Resources\Juridico\SeguimientoDictamenes\URRJ\SeguimientoDictamenURRJResource;
 use App\Models\ActuacionDictamen;
+use App\Models\User;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
 
 class ActuacionDictamenObserver
@@ -30,6 +35,16 @@ class ActuacionDictamenObserver
         }
 
         $seguimiento->updateQuietly($datos);
+
+        $url = $seguimiento->tipo_proceso === TipoProcesoDictamenEnum::VENTA
+            ? SeguimientoDictamenUCPResource::getUrl('view', ['record' => $seguimiento->id])
+            : SeguimientoDictamenURRJResource::getUrl('view', ['record' => $seguimiento->id]);
+
+        $this->notificarDGE(
+            titulo: 'Nueva actuación en dictamen',
+            cuerpo: "{$seguimiento->titulo} — {$actuacion->descripcion_actuacion}",
+            url: $url,
+        );
     }
 
     public function updated(ActuacionDictamen $actuacion): void
@@ -47,5 +62,30 @@ class ActuacionDictamenObserver
         $seguimiento->updateQuietly([
             'etapa_actual' => $actuacion->etapa_actual,
         ]);
+    }
+
+    private function notificarDGE(string $titulo, string $cuerpo, string $url): void
+    {
+        $destinatarios = User::role('DGE')->get();
+
+        if ($destinatarios->isEmpty()) {
+            return;
+        }
+
+        foreach ($destinatarios as $usuario) {
+            Notification::make()
+                ->title($titulo)
+                ->body($cuerpo)
+                ->icon('heroicon-o-scale')
+                ->info()
+                ->actions([
+                    \Filament\Actions\Action::make('ver')
+                        ->label('Ver seguimiento')
+                        ->url($url)
+                        ->button()
+                        ->markAsRead(),
+                ])
+                ->sendToDatabase($usuario);
+        }
     }
 }
