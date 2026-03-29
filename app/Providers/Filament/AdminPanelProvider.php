@@ -45,6 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Poppins')
             ->darkMode(false)
             ->defaultThemeMode(ThemeMode::Light)
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->brandName('SIGA - Inmuebles Accesibles')
             ->brandLogo(asset('images/logo-dark.png'))
             ->brandLogoHeight('4rem')

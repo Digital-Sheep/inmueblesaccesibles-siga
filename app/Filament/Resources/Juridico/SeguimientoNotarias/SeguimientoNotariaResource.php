@@ -97,53 +97,6 @@ class SeguimientoNotariaResource extends Resource
         return $schema->components(SeguimientoNotariaInfolist::schema());
     }
 
-    // public static function infolist(Schema $schema): Schema
-    // {
-    //     return $schema->components([
-    //         Section::make('Identificación')
-    //             ->schema([
-    //                 Grid::make(3)->schema([
-    //                     TextEntry::make('id_garantia')->label('ID Garantía')->default('—'),
-    //                     TextEntry::make('numero_credito')->label('Núm. Crédito')->default('—'),
-    //                     TextEntry::make('nombre_cliente')->label('Cliente')->default('Sin cliente'),
-    //                     TextEntry::make('sede')->label('Sede')->badge(),
-    //                     TextEntry::make('notario')->label('Notario')->default('—'),
-    //                     TextEntry::make('numero_escritura')->label('Núm. Escritura')->default('—'),
-    //                     TextEntry::make('fecha_escritura')->label('Fecha Escritura')
-    //                         ->formatStateUsing(
-    //                             fn($state, $record) => $record->fecha_escritura
-    //                                 ? $record->fecha_escritura->format('d/m/Y')
-    //                                 : '—'
-    //                         ),
-    //                     TextEntry::make('administradora_label')
-    //                         ->label('Administradora')
-    //                         ->getStateUsing(fn($record) => $record->nombre_administradora ?? '—'),
-    //                     IconEntry::make('activo')->label('Activo')->boolean(),
-    //                     IconEntry::make('activo')->label('Activo')->boolean(),
-    //                 ]),
-    //             ]),
-
-    //         Section::make('Seguimiento')
-    //             ->schema([
-    //                 TextEntry::make('etapa_actual')
-    //                     ->label('Etapa Actual')
-    //                     ->default('Sin información')
-    //                     ->columnSpanFull(),
-
-    //                 TextEntry::make('notas_director')
-    //                     ->label('Notas Director / UCP')
-    //                     ->default('—')
-    //                     ->columnSpanFull()
-    //                     ->visible(function () {
-    //                         /** @var \App\Models\User $user */
-    //                         $user = Auth::user();
-
-    //                         return $user->can('seguimientonotarias_ver_todos');
-    //                     }),
-    //             ]),
-    //     ]);
-    // }
-
     // ── Table ──────────────────────────────────────────────────────────────────
 
     public static function table(Table $table): Table

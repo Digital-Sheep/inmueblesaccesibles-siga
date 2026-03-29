@@ -104,9 +104,11 @@ class ActuacionesDictamenRelationManager extends RelationManager
 
                 TextColumn::make('fecha_proxima_actuacion')
                     ->label('Próxima Actuación')
-                    ->date('d/m/Y')
-                    ->default('—')
-                    ->color(fn ($record) => $record->fecha_proxima_actuacion?->isPast() ? 'danger' : 'info'),
+                    ->formatStateUsing(
+                        fn($state) => $state ? \Carbon\Carbon::parse($state)->format('d/m/Y') : '—'
+                    )
+
+                    ->color(fn($record) => $record->fecha_proxima_actuacion?->isPast() ? 'danger' : 'info'),
 
                 TextColumn::make('semana_label')
                     ->label('Semana')
@@ -117,20 +119,21 @@ class ActuacionesDictamenRelationManager extends RelationManager
                 TextColumn::make('descripcion_actuacion')
                     ->label('Actuación')
                     ->limit(80)
-                    ->tooltip(fn ($record) => $record->descripcion_actuacion),
+                    ->tooltip(fn($record) => $record->descripcion_actuacion),
 
                 TextColumn::make('id')
                     ->label('Evidencia')
-                    ->formatStateUsing(fn ($state, $record) => $record->nombre_archivo ?? 'Sin archivo')
+                    ->formatStateUsing(fn($state, $record) => $record->nombre_archivo ?? 'Sin archivo')
                     ->badge()
-                    ->color(fn ($record) => $record->archivo_evidencia ? 'info' : 'gray'),
+                    ->color(fn($record) => $record->archivo_evidencia ? 'info' : 'gray'),
 
                 TextColumn::make('hubo_avance')
                     ->label('¿Avance?')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof EstatusAvanceEnum ? $state->getLabel() : $state)
-                    ->color(fn ($record) => $record->hubo_avance instanceof EstatusAvanceEnum
-                        ? $record->hubo_avance->getColor() : 'gray'
+                    ->formatStateUsing(fn($state) => $state instanceof EstatusAvanceEnum ? $state->getLabel() : $state)
+                    ->color(
+                        fn($record) => $record->hubo_avance instanceof EstatusAvanceEnum
+                            ? $record->hubo_avance->getColor() : 'gray'
                     ),
             ])
             ->headerActions([
@@ -138,7 +141,7 @@ class ActuacionesDictamenRelationManager extends RelationManager
                     ->label('Nueva Actuación')
                     ->icon('heroicon-o-plus')
                     ->createAnother(false)
-                    ->disabled(fn () => $this->getOwnerRecord()->estatus === EstatusDictamenEnum::COMPLETADO),
+                    ->disabled(fn() => $this->getOwnerRecord()->estatus === EstatusDictamenEnum::COMPLETADO),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -147,16 +150,17 @@ class ActuacionesDictamenRelationManager extends RelationManager
                     ->label('Descargar')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('info')
-                    ->visible(fn ($record) => (bool) $record->archivo_evidencia)
-                    ->url(fn ($record) => $record->url_archivo)
+                    ->visible(fn($record) => (bool) $record->archivo_evidencia)
+                    ->url(fn($record) => $record->url_archivo)
                     ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([DeleteBulkAction::make()]),
             ])
-            ->emptyStateHeading(fn () => $this->getOwnerRecord()->estatus === EstatusDictamenEnum::COMPLETADO
-                ? 'Dictamen completado — no se permiten nuevas actuaciones'
-                : 'Sin actuaciones registradas'
+            ->emptyStateHeading(
+                fn() => $this->getOwnerRecord()->estatus === EstatusDictamenEnum::COMPLETADO
+                    ? 'Dictamen completado — no se permiten nuevas actuaciones'
+                    : 'Sin actuaciones registradas'
             )
             ->emptyStateIcon('heroicon-o-document-check');
     }
