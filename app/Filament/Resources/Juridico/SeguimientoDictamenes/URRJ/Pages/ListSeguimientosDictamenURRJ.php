@@ -30,7 +30,7 @@ class ListSeguimientosDictamenURRJ extends ListRecords
                     /** @var \App\Models\User $user */
                     $user = Auth::user();
 
-                    return $record->activo && $user->can('seguimientodictamenes_crear');
+                    return $user->can('seguimientodictamenes_crear');
                 }
             )];
     }

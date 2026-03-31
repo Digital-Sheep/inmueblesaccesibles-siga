@@ -21,7 +21,7 @@ class ListSeguimientoJuicios extends ListRecords
                         /** @var \App\Models\User $user */
                         $user = Auth::user();
 
-                        return $record->activo && $user->can('seguimientojuicios_crear');
+                        return $user->can('seguimientojuicios_crear');
                     }
                 ),
         ];
