@@ -7,6 +7,7 @@ use App\Filament\Resources\Juridico\SeguimientoDictamenes\ActuacionesDictamenRel
 use App\Filament\Resources\Juridico\SeguimientoDictamenes\UCP\SeguimientoDictamenUCPResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Auth;
 
 class ViewSeguimientoDictamenUCP extends ViewRecord
 {
@@ -23,7 +24,15 @@ class ViewSeguimientoDictamenUCP extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [EditAction::make()];
+        return [EditAction::make()
+            ->visible(
+                function ($record) {
+                    /** @var \App\Models\User $user */
+                    $user = Auth::user();
+
+                    return $record->activo && $user->can('seguimientodictamenes_editar');
+                }
+            )];
     }
     public function getRelationManagers(): array
     {

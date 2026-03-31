@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Juridico\SeguimientoJuicios\Pages;
 use App\Filament\Resources\Juridico\SeguimientoJuicios\SeguimientoJuicioResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\Auth;
 
 class ListSeguimientoJuicios extends ListRecords
 {
@@ -14,7 +15,15 @@ class ListSeguimientoJuicios extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Nuevo juicio'),
+                ->label('Nuevo juicio')
+                ->visible(
+                    function ($record) {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $record->activo && $user->can('seguimientojuicios_crear');
+                    }
+                ),
         ];
     }
 }
