@@ -137,11 +137,29 @@ class ActuacionesJuicioRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label('Nueva actuación')
-                    ->createAnother(false),
+                    ->createAnother(false)
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientojuicios_editar');
+                    }),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientojuicios_editar');
+                    }),
+                DeleteAction::make()
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientojuicios_eliminar');
+                    }),
 
                 // Acción para descargar el archivo de evidencia de forma segura
                 Action::make('descargar_evidencia')
@@ -154,7 +172,13 @@ class ActuacionesJuicioRelationManager extends RelationManager
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(function () {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('seguimientojuicios_eliminar');
+                        }),
                 ]),
             ])
             ->emptyStateHeading('Sin actuaciones registradas')

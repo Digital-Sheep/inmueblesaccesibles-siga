@@ -196,7 +196,13 @@ class SeguimientosJuicioTable
                                 ->send();
                         }),
 
-                    EditAction::make()->label('Editar'),
+                    EditAction::make()->label('Editar')
+                        ->visible(function () {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('seguimientojuicios_editar');
+                        }),
 
                     // Archivar con confirmación
                     Action::make('archivar')
@@ -225,7 +231,13 @@ class SeguimientosJuicioTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(function () {
+                            /** @var \App\Models\User $user */
+                            $user = Auth::user();
+
+                            return $user->can('seguimientojuicios_eliminar');
+                        }),
                 ]),
             ])
             ->defaultSort('ultima_actuacion_at', 'asc')

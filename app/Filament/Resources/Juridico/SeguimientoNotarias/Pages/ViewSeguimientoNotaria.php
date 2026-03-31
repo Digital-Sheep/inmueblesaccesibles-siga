@@ -7,6 +7,7 @@ use App\Filament\Resources\Juridico\SeguimientoNotarias\ActuacionesNotariaRelati
 use App\Filament\Resources\Juridico\SeguimientoNotarias\SeguimientoNotariaResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Auth;
 
 class ViewSeguimientoNotaria extends ViewRecord
 {
@@ -23,7 +24,13 @@ class ViewSeguimientoNotaria extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [EditAction::make()];
+        return [EditAction::make()
+            ->visible(function () {
+                /** @var \App\Models\User $user */
+                $user = Auth::user();
+
+                return $user->can('seguimientonotarias_editar');
+             })];
     }
 
     public function getRelationManagers(): array

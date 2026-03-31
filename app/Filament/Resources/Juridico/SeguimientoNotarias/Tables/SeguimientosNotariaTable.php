@@ -157,7 +157,13 @@ class SeguimientosNotariaTable
                         }),
 
 
-                    EditAction::make()->label('Editar'),
+                    EditAction::make()->label('Editar')
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientonotarias_editar');
+                    }),
 
                     Action::make('archivar')
                         ->label('Archivar')
@@ -179,7 +185,13 @@ class SeguimientosNotariaTable
                 ]),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
+                BulkActionGroup::make([DeleteBulkAction::make()
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientonotarias_eliminar');
+                    })]),
             ])
             ->defaultSort('ultima_actuacion_at', 'asc')
             ->emptyStateHeading('Sin seguimientos de notarías')

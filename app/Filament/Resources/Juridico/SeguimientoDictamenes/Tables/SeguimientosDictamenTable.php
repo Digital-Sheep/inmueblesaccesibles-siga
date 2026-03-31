@@ -204,7 +204,13 @@ class SeguimientosDictamenTable
                         }),
 
 
-                    EditAction::make()->label('Editar'),
+                    EditAction::make()->label('Editar')
+                    ->visible(function ($record) {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientodictamenes_editar');
+                    }),
 
                     // Marcar como completado
                     Action::make('marcar_completado')
@@ -254,7 +260,17 @@ class SeguimientosDictamenTable
 
             ])
             ->toolbarActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
+                BulkActionGroup::make([DeleteBulkAction::make()
+                    ->label('Eliminar seleccionados')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientodictamenes_eliminar');
+                    }),
+                ]),
             ])
             ->defaultSort('ultima_actuacion_at', 'asc')
             ->emptyStateHeading('Sin dictámenes registrados')

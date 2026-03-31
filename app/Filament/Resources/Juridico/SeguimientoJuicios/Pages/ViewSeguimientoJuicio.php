@@ -7,6 +7,7 @@ use App\Filament\Resources\Juridico\SeguimientoJuicios\ActuacionesJuicioRelation
 use App\Filament\Resources\Juridico\SeguimientoJuicios\SeguimientoJuicioResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Auth;
 
 class ViewSeguimientoJuicio extends ViewRecord
 {
@@ -24,7 +25,13 @@ class ViewSeguimientoJuicio extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->visible(function () {
+                    /** @var \App\Models\User $user */
+                    $user = Auth::user();
+
+                    return $user->can('seguimientojuicios_editar');
+                }),
         ];
     }
 

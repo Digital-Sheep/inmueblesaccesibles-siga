@@ -125,11 +125,30 @@ class ActuacionesNotariaRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label('Nueva actuación')
-                    ->createAnother(false),
+                    ->createAnother(false)
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientonotarias_editar');
+                    }),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->label('Editar')
+                    ->visible(function ($record) {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientonotarias_editar');
+                    }),
+                DeleteAction::make()
+                    ->visible(function ($record) {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientonotarias_eliminar');
+                    }),
                 Action::make('descargar_evidencia')
                     ->label('Descargar')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -139,7 +158,14 @@ class ActuacionesNotariaRelationManager extends RelationManager
                     ->openUrlInNewTab(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
+                BulkActionGroup::make([DeleteBulkAction::make()
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientonotarias_eliminar');
+                    }),
+                ]),
             ])
             ->emptyStateHeading('Sin actuaciones registradas')
             ->emptyStateDescription('Agrega la primera actuación de esta notaría.')

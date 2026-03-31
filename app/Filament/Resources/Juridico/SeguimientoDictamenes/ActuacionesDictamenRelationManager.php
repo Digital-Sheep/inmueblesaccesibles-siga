@@ -19,6 +19,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class ActuacionesDictamenRelationManager extends RelationManager
 {
@@ -141,11 +142,35 @@ class ActuacionesDictamenRelationManager extends RelationManager
                     ->label('Nueva Actuación')
                     ->icon('heroicon-o-plus')
                     ->createAnother(false)
-                    ->disabled(fn() => $this->getOwnerRecord()->estatus === EstatusDictamenEnum::COMPLETADO),
+                    ->disabled(fn() => $this->getOwnerRecord()->estatus === EstatusDictamenEnum::COMPLETADO)
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientodictamenes_editar');
+                    }),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->label('Editar')
+                    ->icon('heroicon-o-pencil')
+                    ->color('primary')
+                    ->visible(function ($record) {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientodictamenes_editar');
+                    }),
+                DeleteAction::make()
+                    ->label('Eliminar')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->visible(function ($record) {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientodictamenes_eliminar');
+                    }),
                 Action::make('descargar_evidencia')
                     ->label('Descargar')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -155,7 +180,17 @@ class ActuacionesDictamenRelationManager extends RelationManager
                     ->openUrlInNewTab(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
+                BulkActionGroup::make([DeleteBulkAction::make()
+                    ->label('Eliminar seleccionados')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->visible(function () {
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+
+                        return $user->can('seguimientodictamenes_eliminar');
+                    }),
+                ]),
             ])
             ->emptyStateHeading(
                 fn() => $this->getOwnerRecord()->estatus === EstatusDictamenEnum::COMPLETADO
