@@ -21,7 +21,7 @@ class ListSeguimientoNotarias extends ListRecords
                         /** @var \App\Models\User $user */
                         $user = Auth::user();
 
-                        return $record->activo && $user->can('seguimientonotarias_crear');
+                        return $user->can('seguimientonotarias_crear');
                     }
                 ),
         ];
