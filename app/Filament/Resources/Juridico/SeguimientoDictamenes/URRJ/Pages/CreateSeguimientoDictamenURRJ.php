@@ -28,7 +28,7 @@ class CreateSeguimientoDictamenURRJ extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         if (empty($data['tipo_proceso'])) {
-            $data['tipo_proceso'] = TipoProcesoDictamenEnum::CAMBIO->value;
+            $data['tipo_proceso'] = TipoProcesoDictamenEnum::INVERSION->value;
         }
         return $data;
     }
@@ -37,7 +37,11 @@ class CreateSeguimientoDictamenURRJ extends CreateRecord
     {
         return [
             Step::make('Información General')->icon('heroicon-o-information-circle')
-                ->schema(SeguimientoDictamenForm::camposInformacionGeneral()),
+                ->schema(SeguimientoDictamenForm::camposInformacionGeneral(
+                opcionesTipoProceso: [
+                    TipoProcesoDictamenEnum::INVERSION->value => TipoProcesoDictamenEnum::INVERSION->getLabel(),
+                ]
+            )),
             Step::make('Dictamen')->icon('heroicon-o-document-magnifying-glass')
                 ->schema(SeguimientoDictamenForm::camposDictamen()),
             Step::make('Valores')->icon('heroicon-o-currency-dollar')

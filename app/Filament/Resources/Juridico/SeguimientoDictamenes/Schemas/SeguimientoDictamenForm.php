@@ -45,15 +45,19 @@ class SeguimientoDictamenForm
 
     // ── Pasos reutilizables por el Wizard del Create ───────────────────────────
 
-    public static function camposInformacionGeneral(): array
+    public static function camposInformacionGeneral(array $opcionesTipoProceso = []): array
     {
+        $opciones = ! empty($opcionesTipoProceso)
+            ? $opcionesTipoProceso
+            : TipoProcesoDictamenEnum::class;
+
         return [
             Section::make('Identificación')
                 ->schema([
                     Grid::make(2)->schema([
                         Select::make('tipo_proceso')
                             ->label('Tipo de Proceso')
-                            ->options(TipoProcesoDictamenEnum::class)
+                            ->options($opciones)
                             ->required(),
 
                         Select::make('solicitante_id')

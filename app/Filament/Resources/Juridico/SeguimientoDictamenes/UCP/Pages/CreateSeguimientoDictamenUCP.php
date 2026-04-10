@@ -28,7 +28,11 @@ class CreateSeguimientoDictamenUCP extends CreateRecord
     {
         return [
             Step::make('Información General')->icon('heroicon-o-information-circle')
-                ->schema(SeguimientoDictamenForm::camposInformacionGeneral()),
+                ->schema(SeguimientoDictamenForm::camposInformacionGeneral(
+                opcionesTipoProceso: [
+                    TipoProcesoDictamenEnum::VENTA->value => TipoProcesoDictamenEnum::VENTA->getLabel(),
+                ]
+            )),
             Step::make('Dictamen')->icon('heroicon-o-document-magnifying-glass')
                 ->schema(SeguimientoDictamenForm::camposDictamen()),
             Step::make('Valores')->icon('heroicon-o-currency-dollar')

@@ -20,6 +20,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class SeguimientoDictamenURRJResource extends Resource
 {
@@ -34,22 +35,33 @@ class SeguimientoDictamenURRJResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('seguimientodictamenes_ver');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('seguimientodictamenes_ver');
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->can('seguimientodictamenes_crear');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('seguimientodictamenes_crear');
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()->can('seguimientodictamenes_editar');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->can('seguimientodictamenes_editar');
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()->can('seguimientodictamenes_eliminar');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        return $user->can('seguimientodictamenes_eliminar');
     }
 
     public static function getEloquentQuery(): Builder
@@ -59,7 +71,6 @@ class SeguimientoDictamenURRJResource extends Resource
             ->with(['propiedad', 'cliente', 'solicitante', 'catAdministradora', 'actuaciones'])
             ->withCount('actuaciones')
             ->whereIn('tipo_proceso', [
-                TipoProcesoDictamenEnum::CAMBIO->value,
                 TipoProcesoDictamenEnum::INVERSION->value,
             ]);;
     }
