@@ -148,11 +148,11 @@
             <div
                 style="padding:12px 16px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between;">
                 <p style="font-size:13px; font-weight:500; color:#374151; margin:0;">
-                    {{ count($marcadores) }} propiedad(es) con ubicación registrada
+                    {{ count($marcadores) }} garantía(s) con ubicación registrada
                 </p>
                 @if (count($marcadores) === 0)
                     <span style="font-size:12px; color:#d97706;">
-                        ⚠️ Ninguna propiedad tiene coordenadas asignadas con estos filtros. Edita las propiedades para
+                        ⚠️ Ninguna garantía tiene coordenadas asignadas con estos filtros. Edita las garantías para
                         agregar latitud y longitud.
                     </span>
                 @endif

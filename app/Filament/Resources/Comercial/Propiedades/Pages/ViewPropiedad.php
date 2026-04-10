@@ -31,7 +31,7 @@ class ViewPropiedad extends ViewRecord
     {
         return [
             ComercialCluster::getUrl() => 'Comercial',
-            PropiedadResource::getUrl('index') => 'Propiedades',
+            PropiedadResource::getUrl('index') => 'Garantías',
             "#{$this->record->numero_credito}",
         ];
     }
@@ -40,7 +40,7 @@ class ViewPropiedad extends ViewRecord
     {
         return [
             EditAction::make()
-                ->label('Editar Propiedad')
+                ->label('Editar garantía')
                 ->icon('heroicon-o-pencil')
                 ->color('gray')
                 ->slideOver()

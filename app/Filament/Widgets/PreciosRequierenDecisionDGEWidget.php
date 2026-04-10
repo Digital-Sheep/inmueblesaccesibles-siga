@@ -27,7 +27,7 @@ class PreciosRequierenDecisionDGEWidget extends BaseWidget
     {
         return $table
             ->heading('⚖️ Precios que requieren tu decisión final')
-            ->description('Estas propiedades tienen conflictos de aprobación y requieren tu decisión como DGE')
+            ->description('Estas garantías tienen conflictos de aprobación y requieren tu decisión como DGE')
             ->query(
                 Propiedad::query()
                     ->where('precio_requiere_decision_dge', true)
@@ -112,7 +112,7 @@ class PreciosRequierenDecisionDGEWidget extends BaseWidget
                     ->since()
                     ->tooltip(fn(Propiedad $record) => $record->updated_at->format('d/m/Y H:i:s')),
             ])
-            ->actions([
+            ->recordActions([
                 DecisionDGEAction::make(), // ✅ Usar la action completa
             ])
             ->emptyStateHeading('✅ Sin decisiones pendientes')

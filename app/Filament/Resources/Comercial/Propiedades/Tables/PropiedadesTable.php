@@ -28,7 +28,7 @@ class PropiedadesTable
             ->columns([
                 // 1. Identificación Principal
                 TextColumn::make('numero_credito')
-                    ->label('Propiedad')
+                    ->label('Garantía')
                     ->description(fn(Propiedad $record) => Str::limit($record->direccion_completa, 50))
                     ->weight('bold')
                     ->searchable(['numero_credito', 'direccion_completa'])

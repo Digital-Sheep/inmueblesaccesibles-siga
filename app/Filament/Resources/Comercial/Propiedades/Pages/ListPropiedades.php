@@ -52,7 +52,7 @@ class ListPropiedades extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Agregar propiedad')
+                ->label('Agregar garantía')
                 ->closeModalByClickingAway(false)
                 ->modalWidth('5xl')
                 ->slideOver()

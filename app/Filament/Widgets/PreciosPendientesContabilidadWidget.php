@@ -31,7 +31,7 @@ class PreciosPendientesContabilidadWidget extends BaseWidget
     {
         return $table
             ->heading('💰 Precios pendientes de aprobación (Contabilidad)')
-            ->description('Estas propiedades requieren tu validación del precio')
+            ->description('Estas garantías requieren tu validación del precio')
             ->query(
                 Propiedad::query()
                     ->whereHas('aprobacionesPrecio', function ($query) {

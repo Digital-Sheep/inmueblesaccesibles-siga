@@ -70,7 +70,7 @@ class PropiedadForm
                                                 ->searchable()
                                                 ->native(false)
                                                 ->placeholder('Sin cartera asignada')
-                                                ->helperText('Opcional: Grupo de propiedades'),
+                                                ->helperText('Opcional: Grupo de garantías'),
 
                                             TextInput::make('numero_credito')
                                                 ->label('No. Crédito / Folio')
@@ -86,7 +86,7 @@ class PropiedadForm
 
                                 // SECCIÓN: Ubicación
                                 Section::make('📍 Ubicación del Inmueble')
-                                    ->description('Dirección completa de la propiedad')
+                                    ->description('Dirección completa de la garantía')
                                     ->schema([
                                         Textarea::make('direccion_completa')
                                             ->label('Dirección Completa')

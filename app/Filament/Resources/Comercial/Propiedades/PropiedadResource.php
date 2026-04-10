@@ -30,10 +30,10 @@ class PropiedadResource extends Resource
     protected static ?string $model = Propiedad::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
-    protected static ?string $navigationLabel = 'Propiedades';
-    protected static ?string $modelLabel = 'Propiedad';
-    protected static ?string $pluralModelLabel = 'Propiedades';
-    protected static ?string $slug = 'propiedades';
+    protected static ?string $navigationLabel = 'Garantías';
+    protected static ?string $modelLabel = 'Garantía';
+    protected static ?string $pluralModelLabel = 'Garantías';
+    protected static ?string $slug = 'garantias';
 
     protected static ?string $cluster = ComercialCluster::class;
 
