@@ -33,7 +33,7 @@ class ActuacionNotariaObserver
 
         $seguimiento->updateQuietly($datos);
 
-        $this->notificarDGE(
+        $this->notificarActuacion(
             titulo: 'Nueva actuación en notaría',
             cuerpo: "{$seguimiento->titulo} — {$actuacion->descripcion_actuacion}",
             url: SeguimientoNotariaResource::getUrl('view', ['record' => $seguimiento->id]),
@@ -57,9 +57,9 @@ class ActuacionNotariaObserver
         ]);
     }
 
-    private function notificarDGE(string $titulo, string $cuerpo, string $url): void
+    private function notificarActuacion(string $titulo, string $cuerpo, string $url): void
     {
-        $destinatarios = User::role('DGE')->get();
+        $destinatarios = User::role(['DGE', 'Direccion_Comercial', 'GRS_Nacional', 'RAC_Atencion_Cliente', 'GAD_Administracion'])->get();
 
         if ($destinatarios->isEmpty()) {
             return;
