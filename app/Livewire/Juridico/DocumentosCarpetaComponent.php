@@ -309,6 +309,9 @@ class DocumentosCarpetaComponent extends Component
      */
     private function verificarPermiso(): void
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $permisos = [
             \App\Models\SeguimientoJuicio::class    => 'seguimientojuicios_editar',
             \App\Models\SeguimientoNotaria::class   => 'seguimientonotarias_editar',
@@ -317,7 +320,7 @@ class DocumentosCarpetaComponent extends Component
 
         $permiso = $permisos[$this->modelType] ?? null;
 
-        if (! $permiso || ! Auth::user()->can($permiso)) {
+        if (! $permiso || ! $user->can($permiso)) {
             abort(403, 'No tienes permiso para modificar documentos de este seguimiento.');
         }
     }

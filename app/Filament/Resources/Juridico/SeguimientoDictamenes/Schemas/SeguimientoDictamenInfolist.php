@@ -77,9 +77,13 @@ class SeguimientoDictamenInfolist
                                                 ->default('—')
                                                 ->columnSpanFull(),
 
-                                            TextEntry::make('cliente.nombre_completo')
+                                            TextEntry::make('cliente.nombres')
                                                 ->label('Cliente')
-                                                ->default('Sin cliente vinculado'),
+                                                ->getStateUsing(
+                                                    fn($record) => $record->cliente
+                                                        ? trim("{$record->cliente->nombres} {$record->cliente->apellido_paterno} {$record->cliente->apellido_materno}")
+                                                        : 'Sin cliente vinculado'
+                                                ),
 
                                             TextEntry::make('ultima_actuacion_at')
                                                 ->label('Última Actuación')
