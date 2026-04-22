@@ -21,8 +21,9 @@ class RecotizarAction
                     /** @var \App\Models\User $user */
                     $user = Auth::user();
 
-                    return $record->estatus_comercial === 'EN_REVISION' &&
-                        !$record->precio_aprobado &&
+                    return
+                        ($record->estatus_comercial === 'EN_REVISION' || $record->estatus_comercial === 'DISPONIBLE') &&
+                        // !$record->precio_aprobado &&
                         $user->can('propiedades_calcular_precio');
                 }
             )
@@ -59,7 +60,6 @@ class RecotizarAction
                         ->title('✅ Lista para Recotizar')
                         ->body('La cotización anterior se desactivó. Ahora puedes calcular un nuevo precio.')
                         ->send();
-
                 } catch (\Exception $e) {
                     Notification::make()
                         ->danger()

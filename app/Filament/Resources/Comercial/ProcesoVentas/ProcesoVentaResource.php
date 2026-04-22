@@ -126,12 +126,18 @@ class ProcesoVentaResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
+
+        $query->where('estatus', '!=', 'CANCELADO');
+
         return self::aplicarFiltrosDeSeguridad($query);
     }
 
     public static function getGlobalSearchEloquentQuery(): Builder
     {
         $query = parent::getGlobalSearchEloquentQuery();
+
+        $query->where('estatus', '!=', 'CANCELADO');
+
         return self::aplicarFiltrosDeSeguridad($query);
     }
 }
