@@ -23,17 +23,37 @@ class InteraccionsTable
                 TextColumn::make('entidad_nombre')
                     ->label('Nombre Prospecto/Cliente')
                     ->getStateUsing(function ($record) {
-                        // Detecta dinámicamente el nombre según el modelo
                         return $record->entidad->nombre_completo
                             ?? $record->entidad->nombre_completo_virtual
                             ?? 'Sin Nombre';
                     })
-                    ->searchable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where(function ($q) use ($search) {
+                            // Prospectos: campo nombre_completo
+                            $q->where(function ($sub) use ($search) {
+                                $sub->where('entidad_type', 'App\Models\Prospecto')
+                                    ->whereHasMorph(
+                                        'entidad',
+                                        [\App\Models\Prospecto::class],
+                                        fn($e) => $e->where('nombre_completo', 'like', "%{$search}%")
+                                    );
+                            })
+                                // Clientes: campos separados
+                                ->orWhere(function ($sub) use ($search) {
+                                    $sub->where('entidad_type', 'App\Models\Cliente')
+                                        ->whereHasMorph(
+                                            'entidad',
+                                            [\App\Models\Cliente::class],
+                                            fn($e) => $e->where('nombres', 'like', "%{$search}%")
+                                                ->orWhere('apellido_paterno', 'like', "%{$search}%")
+                                                ->orWhere('apellido_materno', 'like', "%{$search}%")
+                                        );
+                                });
+                        });
+                    }),
                 TextColumn::make('resumen_interaccion')
                     ->label('Interacción')
-                    ->searchable()
-                    ->sortable()
                     ->weight('bold'),
                 TextColumn::make('entidad_type')
                     ->label('Relacionado con')
