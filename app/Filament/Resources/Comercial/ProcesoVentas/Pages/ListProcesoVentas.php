@@ -19,6 +19,12 @@ class ListProcesoVentas extends ListRecords
                 ->modalHeading('Registrar nuevo proceso de venta')
                 ->modalWidth('lg')
                 ->createAnother(false)
+                ->mutateDataUsing(function (array $data): array {
+                    if (empty($data['vendedor_id'])) {
+                        $data['vendedor_id'] = Auth::id();
+                    }
+                    return $data;
+                })
                 ->visible(
                     function (): bool {
                         /** @var \App\Models\User $user */
