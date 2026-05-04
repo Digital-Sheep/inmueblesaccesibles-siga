@@ -9,15 +9,28 @@
 {{-- DEBUG temporal — quitar después
 @dump($carpetaId, $carpetaSlug, $permisoEditar) --}}
 
-@livewire(
-    'juridico.documentos-carpeta',
-    [
-        'modelType'     => get_class($record),
-        'modelId'       => $record->id,
-        'carpetaId'     => $carpetaId,
-        'carpetaSlug'   => $carpetaSlug,
-        'pathBase'      => $record->path_base,
-        'permisoEditar' => $permisoEditar,
-    ],
-    key('carpeta-' . $carpetaId . '-' . $record->id)
-)
+@if ($carpetaSlug === 'docs-contabilidad')
+    @livewire(
+        'juridico.gastos-contabilidad',
+        [
+            'modelType' => get_class($record),
+            'modelId' => $record->id,
+            'pathBase' => $record->path_base,
+            'permisoEditar' => $permisoEditar,
+        ],
+        key('contabilidad-' . $record->id)
+    )
+@else
+    @livewire(
+        'juridico.documentos-carpeta',
+        [
+            'modelType' => get_class($record),
+            'modelId' => $record->id,
+            'carpetaId' => $carpetaId,
+            'carpetaSlug' => $carpetaSlug,
+            'pathBase' => $record->path_base,
+            'permisoEditar' => $permisoEditar,
+        ],
+        key('carpeta-' . $carpetaId . '-' . $record->id)
+    )
+@endif

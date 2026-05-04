@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Livewire\Juridico\DocumentosCarpetaComponent;
+use App\Livewire\Juridico\GastosContabilidadComponent;
 use App\Models\ActuacionDictamen;
 use App\Models\ActuacionJuicio;
 use App\Models\ActuacionNotaria;
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         ActuacionDictamen::observe(ActuacionDictamenObserver::class);
 
         Livewire::component('juridico.documentos-carpeta', DocumentosCarpetaComponent::class);
+        Livewire::component('juridico.gastos-contabilidad', GastosContabilidadComponent::class);
 
         // Morph map para documentos jurídicos
         // Evita guardar namespaces completos en archivos.entidad_type
