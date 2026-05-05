@@ -23,6 +23,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
@@ -149,7 +150,23 @@ class AdminPanelProvider extends PanelProvider
                     .fi-wi-content {
                         padding-top: 1rem !important;
                     }
+
+                    /* Ocultar label del simulador cuando sidebar está colapsado */
+                    .fi-sidebar-nav[x-cloak] ~ * .simulador-label,
+                    nav[aria-label] .fi-sidebar-item:not([style*="display"]) ~ .simulador-footer .simulador-label {
+                        display: none;
+                    }
+
+                    /* Cuando el sidebar está colapsado (collapsed class de Filament) */
+                    [data-sidebar-collapsed="true"] .simulador-label,
+                    .fi-sidebar-collapsed .simulador-label {
+                        display: none !important;
+                    }
                 </style>')
+            )
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::SIDEBAR_FOOTER,
+                fn() => new HtmlString(view('filament.components.sidebar-footer')->render())
             )
             ->authMiddleware([
                 Authenticate::class,
